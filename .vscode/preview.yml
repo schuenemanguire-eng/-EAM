@@ -1,0 +1,11 @@
+apps:
+  - name: "后端API"
+    port:
+    run: bash start-backend.sh
+    root: ./backend
+
+  - name: "前端应用"
+    port:
+    run: npm run dev
+    root: ./frontend
+    mainPort: true
