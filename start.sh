@@ -6,6 +6,11 @@
 # ==========================================================
 set -e
 
+# 强制以 bash 运行（兼容 sh start.sh 调用，避免 dash 不支持 echo -e / trap SIGINT）
+if [ -z "$BASH_VERSION" ]; then
+  exec bash "$0" "$@"
+fi
+
 # 颜色
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'

@@ -10,6 +10,11 @@
 #   - 通过 spring profile cloudstudio 切换为 CloudStudio 数据库配置（密码 123456）
 # ============================================================
 
+# 强制以 bash 运行（兼容 sh 调用，避免 dash 兼容性问题）
+if [ -z "$BASH_VERSION" ]; then
+  exec bash "$0" "$@"
+fi
+
 MYSQL_HOST="127.0.0.1"
 MYSQL_PORT="3306"
 MYSQL_USER="root"
