@@ -38,14 +38,19 @@ if [ $i -ge $MAX_RETRY ]; then
   echo "错误：${MAX_RETRY} 次尝试后 MySQL 仍未就绪，将直接启动后端（可能因数据库未建表而失败）"
 fi
 
-# 初始化数据库（仅当 MySQL 可用时执行）
+# 初始化数据库（仅当 MySQL 可用且 eam_db 不存在时执行，幂等）
 if mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "SELECT 1" &>/dev/null; then
-  echo "执行数据库初始化脚本: ${SCHEMA_SQL}"
-  mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" <"${SCHEMA_SQL}"
-  if [ $? -eq 0 ]; then
-    echo "数据库初始化完成（${MYSQL_DATABASE}）"
+  DB_EXISTS=$(mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -N -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='${MYSQL_DATABASE}';" 2>/dev/null)
+  if [ -z "$DB_EXISTS" ]; then
+    echo "执行数据库初始化脚本: ${SCHEMA_SQL}"
+    mysql -h"${MYSQL_HOST}" -P"${MYSQL_PORT}" -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" <"${SCHEMA_SQL}"
+    if [ $? -eq 0 ]; then
+      echo "数据库初始化完成（${MYSQL_DATABASE}）"
+    else
+      echo "警告：schema.sql 执行失败，请检查脚本"
+    fi
   else
-    echo "警告：schema.sql 执行失败，如库已存在且表已建好可忽略"
+    echo "数据库 ${MYSQL_DATABASE} 已存在，跳过建表（如需重置请手动执行 schema.sql）"
   fi
 else
   echo "MySQL 不可用（本地环境），跳过建表初始化"
