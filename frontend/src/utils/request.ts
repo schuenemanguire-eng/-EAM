@@ -2,7 +2,9 @@ import axios from 'axios'
 import { message } from 'ant-design-vue'
 
 const request = axios.create({
-  baseURL: '/api',
+  // CloudStudio/Vite 代理模式下使用相对路径 /api（由 vite proxy 转发到后端）
+  // 生产部署时可通过 VITE_API_BASE_URL 环境变量指定后端地址
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000
 })
 
