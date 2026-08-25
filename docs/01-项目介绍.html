@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业员工管理系统（EAM）项目介绍</title>
+<!-- 字体：Google Fonts —— 预设 0 “Light Professional” 指定字体族（唯一允许的外部依赖） -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* ==========================================================================
+   1. 系统常量与主题变量（:root）
+   --------------------------------------------------------------------------
+   - 预设 0 — “Light Professional”：干净白底、靛蓝强调、DM Sans 标题、标准 16px 字号。
+   - 下方 `--content-max-width / --content-gutter / --chart-text-size` 为全预设共享的
+     系统级常量，任何预设均不得覆盖或缩减（1220px 阅读壳、每侧 32px 最小留白）。
+   ========================================================================== */
+:root {
+    /* ---- 预设 0 · Light Professional 配色 ---- */
+    --bg-primary:   #ffffff;   /* 页面主底色：纯白 */
+    --bg-surface:   #f8f9fb;   /* 次级表面：侧边栏、卡片、表头、代码底色（浅冷灰） */
+    --text-primary: #111827;   /* 正文主色：近黑墨色 */
+    --text-secondary: #6b7280; /* 次要文字：说明、元信息 */
+    --border:       #e5e7eb;   /* 分隔线 / 描边 */
+    --accent:       #4f46e5;   /* 强调色：靛蓝（导航、链接、高亮、进度条） */
+    --code-bg:      #f3f4f6;   /* 代码背景 */
+
+    /* ---- 字体族（预设 0）---- */
+    --font-display: 'DM Sans', sans-serif;    /* 标题 */
+    --font-body:    'DM Sans', sans-serif;    /* 正文 */
+    --font-code:    'JetBrains Mono', monospace; /* 代码 */
+    --font-numeric: 'DM Mono', monospace;     /* 数字 / 序号：等宽制表 */
+
+    /* ---- 排版比例（标准档）---- */
+    --text-body:      1rem;      /* 16px */
+    --text-small:     0.875rem;  /* 14px */
+    --text-mono-label: 0.7rem;   /* 11.2px */
+    --lh-body:        1.65;
+    --lh-heading:     1.15;
+
+    /* ---- 布局系统常量（不可覆盖）---- */
+    --content-max-width: 1220px; /* 全局阅读壳最大宽度 */
+    --content-gutter:    32px;   /* 每侧最小水平留白 */
+    --chart-text-size:   13px;   /* 全局图表文字（本项目无图表，保留常量） */
+    --sidebar-width:     280px;  /* 左侧固定导航宽度 */
+    --spacing:           1rem;   /* 基准间距单元 */
+}
+
+/* ==========================================================================
+   2. 基础 Reset 与全局元素
+   ========================================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+    scroll-padding-top: 24px;  /* 锚点定位时为固定顶部留出呼吸空间 */
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* 文本选中颜色 —— 与靛蓝强调统一 */
+::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* 键盘可达性：统一焦点轮廓 */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* 数字类元素：等宽 + 表格数字，保证统计值/序号对齐 */
+.toc-num, .meta-label, .stat-number {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+/* 无障碍：跳过导航直达正文 */
+.skip-link {
+    position: absolute; left: -9999px; top: 0;
+    z-index: 2000;
+    background: var(--accent); color: #fff;
+    padding: 0.7rem 1.1rem; border-radius: 6px;
+    text-decoration: none; font-weight: 600;
+}
+.skip-link:focus { left: 1rem; top: 1rem; }
+
+/* ==========================================================================
+   3. 阅读进度条（顶部 3px 靛蓝细线，随滚动填充）
+   ========================================================================== */
+.reading-progress {
+    position: fixed; top: 0; left: 0;
+    height: 3px; width: 0%;
+    background: var(--accent);
+    z-index: 9999;
+    transition: width 0.1s linear;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   4. 左侧固定侧边栏（.nav-sidebar）
+   --------------------------------------------------------------------------
+   两种状态：
+   - pinned（固定）：常驻可见，正文左移出侧边栏宽度；
+   - unpinned（悬浮）：浮于内容之上，配合透明 overlay 点击外部关闭。
+   状态持久化于 localStorage（由 SidebarController 管理）。
+   ========================================================================== */
+.nav-sidebar {
+    position: fixed; top: 0; left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 1.75rem 1.5rem;
+    z-index: 1000;
+    display: flex; flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- 固定态：始终可见，去掉悬浮阴影 ---- */
+.nav-sidebar.pinned {
+    transform: translateX(0) !important;
+    box-shadow: none;
+}
+/* 固定时正文向右让位 */
+body.sidebar-pinned-left .content { margin-left: var(--sidebar-width); }
+
+/* ---- 悬浮态：默认隐藏于左侧，打开时滑入 + 柔和阴影 ---- */
+.nav-sidebar:not(.pinned) { transform: translateX(-100%); box-shadow: 4px 0 24px rgba(0,0,0,0.12); }
+.nav-sidebar:not(.pinned).open { transform: translateX(0); }
+
+/* 透明点击捕获层 —— 无背景，悬浮侧边栏打开时点击外部即关闭 */
+.sidebar-overlay {
+    position: fixed; inset: 0;
+    background: transparent;
+    z-index: 999;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+.sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* ---- 侧边栏头部：品牌标识 + 钉住/收起按钮 ---- */
+.nav-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 0.5rem; margin-bottom: 1.5rem;
+}
+/* 品牌徽标：靛蓝小方块 + 标题两行 */
+.nav-brand { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+.nav-brand-mark {
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent); color: #fff;
+    font-family: var(--font-code); font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.nav-brand-text { display: flex; flex-direction: column; min-width: 0; }
+.nav-brand-title {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 0.95rem; color: var(--text-primary);
+    letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nav-brand-sub { font-size: var(--text-mono-label); color: var(--text-secondary); letter-spacing: 0.04em; }
+
+/* 钉住 / 收起按钮（pin / collapse 两个 SVG 都必须在场） */
+.sidebar-pin-btn {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; color: var(--text-secondary);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.sidebar-pin-btn:hover { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.sidebar-pin-btn svg { width: 18px; height: 18px; }
+/* 悬浮时显示钉住图标；固定后切换为收起图标 */
+.sidebar-pin-btn .collapse-icon { display: none; }
+.nav-sidebar.pinned .sidebar-pin-btn .pin-icon { display: none; }
+.nav-sidebar.pinned .sidebar-pin-btn .collapse-icon { display: block; }
+
+/* ---- 实时搜索框 ---- */
+.nav-search { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 1.5rem; }
+.nav-search input[type="search"] {
+    flex: 1; min-width: 0;
+    padding: 0.5rem 0.7rem;
+    font-family: var(--font-body); font-size: var(--text-small);
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border); border-radius: 6px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.nav-search input[type="search"]::placeholder { color: var(--text-secondary); }
+.nav-search input[type="search"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    outline: none;
+}
+/* 移除 webkit 自带清除按钮，避免视觉杂乱 */
+.nav-search input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.search-nav-btn {
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg-primary); color: var(--text-secondary);
+    cursor: pointer; font-size: 0.8rem; line-height: 1;
+    transition: border-color 0.15s, color 0.15s;
+}
+.search-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.search-count {
+    flex-shrink: 0;
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    font-size: var(--text-mono-label);
+    color: var(--text-secondary);
+    min-width: 3.5em; text-align: right;
+}
+
+/* ---- 目录（TOC）---- */
+.toc-label {
+    margin: 0 0 0.6rem;
+    font-size: var(--text-mono-label);
+    font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-secondary);
+}
+.toc-list { list-style: none; margin: 0; padding: 0; }
+.toc-item { margin: 2px 0; }
+
+/* 一级 / 二级链接基础态 */
+.toc-link {
+    display: flex; align-items: baseline; gap: 0.55rem;
+    padding: 0.42rem 0.65rem;
+    border-radius: 4px;
+    font-size: var(--text-small);
+    color: var(--text-secondary);
+    text-decoration: none;
+    line-height: 1.35;
+    transition: color 0.2s ease, background-color 0.2s ease, padding-left 0.2s ease;
+}
+.toc-link:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+
+/* 一级项加粗 + 序号；二级项缩进，不使用序号 */
+.toc-level-1 > .toc-link { font-weight: 600; color: var(--text-primary); }
+.toc-level-2 { padding-left: 1.1rem; }
+.toc-level-2 > .toc-link { font-size: 0.82rem; font-weight: 400; }
+
+.toc-num {
+    font-size: var(--text-mono-label);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* 当前阅读项（预设 0：靛蓝文字 + 8% 透明靛蓝底，无侧边竖条） */
+.toc-link.active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    font-weight: 600;
+}
+/* 当二级项激活时，其所属一级父项同步提亮 */
+.toc-parent.parent-active > .toc-link { color: var(--accent); }
+
+/* ---- 侧边栏底部注脚 ---- */
+.nav-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    display: flex; align-items: center; gap: 0.45rem;
+    font-size: var(--text-mono-label);
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+}
+.nav-footer-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+/* ==========================================================================
+   5. 展开导航按钮（汉堡，悬浮侧边栏 / 移动端可见）
+   ========================================================================== */
+.nav-toggle {
+    position: fixed; top: 1rem; left: 1rem;
+    z-index: 998;
+    display: none;
+    align-items: center; justify-content: center;
+    width: 42px; height: 42px;
+    background: var(--bg-surface); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: opacity 0.2s, border-color 0.2s, color 0.2s;
+}
+.nav-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.nav-toggle svg { width: 20px; height: 20px; }
+/* 侧边栏固定时隐藏汉堡按钮 */
+body.sidebar-pinned-left .nav-toggle,
+body.sidebar-pinned-right .nav-toggle { display: none; }
+
+/* ==========================================================================
+   6. 正文内容壳（content）
+   --------------------------------------------------------------------------
+   全局 1220px 阅读壳 + 每侧 32px 最小留白（系统常量，任何断点不得缩减）。
+   ========================================================================== */
+.content {
+    padding-block: 2.75rem 4rem;
+    transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.content-inner {
+    width: min(calc(100% - var(--content-gutter) - var(--content-gutter)), var(--content-max-width));
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+}
+
+/* ==========================================================================
+   7. 文档头（Hero）
+   --------------------------------------------------------------------------
+   装饰：右上角一抹极淡的靛蓝径向光晕，保持克制、不干扰阅读。
+   ========================================================================== */
+.doc-hero {
+    position: relative;
+    padding: 2.5rem 0 3rem;
+    margin-bottom: 1rem;
+}
+.doc-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse 60% 90% at 85% -10%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%),
+        radial-gradient(ellipse 40% 70% at 10% 110%, color-mix(in srgb, var(--accent) 4%, transparent), transparent 70%);
+    pointer-events: none;
+}
+
+/* 眉题：小号大写靛蓝标签，前缀一个强调圆点 */
+.eyebrow {
+    position: relative;
+    display: flex; align-items: center; gap: 0.55rem;
+    margin: 0 0 1rem;
+    font-size: var(--text-small); font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent);
+}
+.eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+/* 主标题：DM Sans 加粗、紧凑字距 */
+.doc-title {
+    margin: 0 0 1rem;
+    font-family: var(--font-display);
+    font-weight: 700; letter-spacing: -0.02em; line-height: var(--lh-heading);
+    font-size: clamp(1.9rem, 3vw + 1rem, 2.6rem);
+    color: var(--text-primary);
+}
+
+/* 导语：稍大次要文字 */
+.hero-deck {
+    margin: 0 0 1.75rem;
+    max-width: 62ch;
+    font-size: 1.0625rem;
+    color: var(--text-secondary);
+}
+
+/* 技术标签行：源自“技术栈”表格的真实内容 */
+.hero-meta { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.meta-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    font-family: var(--font-code); font-size: 0.78rem;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border); border-radius: 999px;
+}
+.meta-label {
+    font-size: var(--text-mono-label);
+    font-weight: 700; letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+/* ==========================================================================
+   8. 正文区块（section / sub-section）
+   ========================================================================== */
+.section { padding-top: 2.5rem; margin-top: 0.5rem; }
+/* 相邻主区块之间用 1px 细线分隔 + 充足留白（保持清爽 airy 感） */
+.section + .section { border-top: 1px solid var(--border); margin-top: 2rem; }
+
+/* 主区块标题 */
+.section > h2 {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-display);
+    font-weight: 700; letter-spacing: -0.015em; line-height: var(--lh-heading);
+    font-size: 1.55rem;
+    color: var(--text-primary);
+}
+
+/* 子区块标题（H3）与间距 */
+.sub-section { margin-top: 2.25rem; }
+.sub-section:first-of-type { margin-top: 1.75rem; }
+.sub-section > h3 {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-display);
+    font-weight: 600; letter-spacing: -0.01em; line-height: var(--lh-heading);
+    font-size: 1.18rem;
+    color: var(--text-primary);
+}
+
+/* 标题悬停锚点（微交互：hover 显现 “#” 链接） */
+.heading-anchor {
+    opacity: 0; margin-left: 0.45rem;
+    font-size: 0.8em; font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: opacity 0.2s, color 0.2s;
+}
+h2:hover .heading-anchor, h3:hover .heading-anchor, h4:hover .heading-anchor { opacity: 1; }
+.heading-anchor:hover { color: var(--accent); }
+
+/* ---- 段落 ---- */
+.section p, .sub-section p { margin: 0 0 1rem; max-width: 72ch; }
+
+/* ---- 无序列表：靛蓝圆点 marker ---- */
+.section ul, .sub-section ul {
+    margin: 0 0 1.25rem; padding-left: 1.15rem;
+}
+.section ul > li, .sub-section ul > li { margin: 0.4rem 0; padding-left: 0.25rem; }
+.section ul > li::marker, .sub-section ul > li::marker { color: var(--accent); }
+
+/* ---- 行内代码 ---- */
+code {
+    font-family: var(--font-code);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.12em 0.38em;
+    color: #3730a3; /* 深靛蓝，与强调色呼应 */
+}
+/* 代码块（预格式化） */
+pre {
+    margin: 0 0 1.25rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    line-height: 1.6;
+}
+pre code {
+    display: block;
+    background: none; border: 0; padding: 0;
+    color: var(--text-primary);
+    white-space: pre;
+}
+/* 语法高亮 token（由 highlightCode 注入） */
+.token-keyword { color: #7c3aed; font-weight: 500; }
+.token-string  { color: #0f766e; }
+.token-comment { color: var(--text-secondary); font-style: italic; }
+.token-number  { color: #b45309; }
+.token-function{ color: #2563eb; }
+
+/* ---- 项目名称卡片（Elevated 模式 D —— 每区块至多一个）---- */
+.name-card { margin: 1.5rem 0; }
+.project-full-name {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+.name-card p:last-child { margin-bottom: 0; color: var(--text-secondary); }
+
+/* ---- 卡片系统（依据 Card Rules）---- */
+/* 模式 C — Outlined + hover 填充：可交互/可选卡片 */
+.card-outlined {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.card-outlined:hover {
+    background: var(--bg-surface);
+    border-color: var(--accent);
+}
+/* 模式 D — Elevated：hero / 突出展示，每区块至多一个 */
+.card-elevated {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07), 0 0 0 1px var(--border);
+}
+
+/* 卡片网格：仅用 gap，绝不使用 margin（Card Rules） */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0 1.5rem;
+}
+
+/* 业务痛点卡片 */
+.pain-card { display: flex; flex-direction: column; gap: 0.4rem; }
+.pain-card h4 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+.pain-card p { margin: 0; font-size: var(--text-small); color: var(--text-secondary); line-height: 1.6; }
+
+/* 核心功能卡片：卡片顶部一个靛蓝小图标序号 */
+.feature-card h4 {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin: 0 0 0.6rem;
+    font-family: var(--font-display);
+    font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+.feature-card .feature-index {
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    font-family: var(--font-numeric); font-size: 0.78rem; font-weight: 700;
+}
+.feature-card ul { margin: 0; padding-left: 1.05rem; }
+.feature-card ul > li { font-size: var(--text-small); color: var(--text-secondary); line-height: 1.6; }
+.feature-card ul > li::marker { color: var(--accent); }
+
+/* ---- 响应式表格（模式 B — Inset：数据表）---- */
+.table-wrap {
+    margin: 1.25rem 0 1.5rem;
+    overflow-x: auto;               /* 窄屏横向滚动 → 响应式 */
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.04);
+}
+table { width: 100%; border-collapse: collapse; min-width: 480px; }
+thead th {
+    background: var(--bg-surface);
+    text-align: left;
+    font-size: var(--text-small); font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: var(--text-small);
+    vertical-align: top;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr { transition: background-color 0.15s ease; }
+tbody tr:hover { background: color-mix(in srgb, var(--accent) 4%, var(--bg-surface)); }
+
+/* 表格内代码标签：去掉底色边框，避免过度堆叠 */
+.table-wrap code { background: none; border: 0; padding: 0; color: #3730a3; }
+
+/* ---- 文档页脚 ---- */
+.doc-footer {
+    margin-top: 4rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+    font-size: var(--text-small); color: var(--text-secondary);
+}
+.doc-footer .footer-sep { color: var(--border); }
+
+/* ==========================================================================
+   9. 返回顶部按钮（右下角，滚动超过一屏后显现）
+   ========================================================================== */
+.back-to-top {
+    position: fixed; bottom: 2rem; right: 2rem;
+    z-index: 900;                       /* 低于侧边栏(1000)但高于正文 */
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--accent); color: #fff;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    /* 默认隐藏：淡出 + 下移 */
+    opacity: 0; transform: translateY(12px); pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.back-to-top:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.back-to-top:active { transform: translateY(0); }
+
+/* ==========================================================================
+   10. 滚动显现动画（Animation Patterns — 专业/技术感：0.5s 柔和淡入 + 轻微上移）
+   ========================================================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* 搜索结果高亮：使用靛蓝 tint，与主题统一 */
+mark {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--text-primary);
+    border-radius: 3px; padding: 0 2px;
+}
+mark.mark-active { background: var(--accent); color: #fff; outline: 2px solid color-mix(in srgb, var(--accent) 55%, #fff); }
+
+/* ==========================================================================
+   11. 响应式
+   --------------------------------------------------------------------------
+   - 平板 768–1024px：侧边栏收窄为 240px；
+   - 移动 <768px：侧边栏始终悬浮覆盖、禁用钉住、汉堡常显、正文不留白。
+   ========================================================================== */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .nav-sidebar { width: 240px; padding: 1.5rem 1.1rem; }
+    body.sidebar-pinned-left .content { margin-left: 240px; }
+    .content { padding-block: 2.25rem 3.5rem; }
+}
+
+@media (max-width: 767px) {
+    .nav-sidebar {
+        width: min(86vw, 320px);
+        transform: translateX(-100%) !important;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+    }
+    .nav-sidebar.open { transform: translateX(0) !important; }
+    /* 移动端：无论 pinned 与否，正文均不预留侧边距 */
+    body.sidebar-pinned-left .content,
+    body.sidebar-pinned-right .content { margin: 0; }
+    .content { padding-block: 1.75rem 3rem; }
+    /* 移动端始终显示汉堡按钮，禁用钉住 */
+    .nav-toggle { display: flex; }
+    .sidebar-pin-btn { display: none; }
+    .doc-title { font-size: 1.75rem; }
+    .hero-deck { font-size: 1rem; }
+    .section + .section { margin-top: 1.25rem; }
+    .section > h2 { font-size: 1.35rem; }
+}
+
+/* ==========================================================================
+   12. 动画偏好：尊重系统减弱动效设置
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 无障碍：跳过导航 -->
+<a class="skip-link" href="#main-content">跳到正文</a>
+
+<!-- 阅读进度条 -->
+<div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
+
+<!-- ==================== 左侧固定侧边栏 ==================== -->
+<aside class="nav-sidebar nav-sidebar-left" id="nav-sidebar">
+    <div class="nav-header">
+        <div class="nav-brand">
+            <span class="nav-brand-mark">EAM</span>
+            <div class="nav-brand-text">
+                <span class="nav-brand-title">EAM 项目介绍</span>
+                <span class="nav-brand-sub">企业员工管理系统</span>
+            </div>
+        </div>
+        <!-- 钉住 / 收起按钮：悬浮时显示钉住图标，固定后显示收起图标 -->
+        <button class="sidebar-pin-btn" id="sidebar-pin-btn" title="Pin navigation" aria-label="Pin navigation">
+            <svg class="pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6"/><path d="M10 4v4l-3 3v2h10v-2l-3-3V4"/><path d="M12 13v7"/></svg>
+            <svg class="collapse-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 15.25L5.25 9L11.5 2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+    </div>
+
+    <!-- 实时搜索 -->
+    <div class="nav-search">
+        <input type="search" id="search-input" placeholder="搜索文档…" aria-label="搜索文档" />
+        <button id="search-prev" class="search-nav-btn" style="display:none" title="上一个 (Shift+Enter)">↑</button>
+        <button id="search-next" class="search-nav-btn" style="display:none" title="下一个 (Enter)">↓</button>
+        <span class="search-count" id="search-count"></span>
+    </div>
+
+    <!-- 目录（TOC）：H2 一级 + H3 二级嵌套 -->
+    <nav class="toc" aria-label="文档目录">
+        <p class="toc-label">目录</p>
+        <ul class="toc-list">
+            <li class="toc-item toc-level-1">
+                <a class="toc-link" href="#project-name"><span class="toc-num">01</span>项目名称</a>
+            </li>
+            <li class="toc-item toc-level-1">
+                <a class="toc-link" href="#business-scenario"><span class="toc-num">02</span>业务场景</a>
+            </li>
+            <li class="toc-item toc-level-1 toc-parent">
+                <a class="toc-link" href="#core-features"><span class="toc-num">03</span>核心功能</a>
+                <ul class="toc-children">
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-login">登录与身份认证</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-dashboard">数据看板</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-org">组织架构管理</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-employee">员工管理</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-attendance">考勤管理</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-leave">请假管理</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#core-salary">薪资管理</a></li>
+                </ul>
+            </li>
+            <li class="toc-item toc-level-1 toc-parent">
+                <a class="toc-link" href="#case-features"><span class="toc-num">04</span>案例特点</a>
+                <ul class="toc-children">
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#case-architecture">架构设计</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#case-tech-stack">技术栈</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#case-engineering">工程化亮点</a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#case-data-design">数据设计</a></li>
+                </ul>
+            </li>
+            <li class="toc-item toc-level-1">
+                <a class="toc-link" href="#runtime-environment"><span class="toc-num">05</span>运行环境</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="nav-footer">
+        <span class="nav-footer-dot"></span>
+        <span>EAM · 本地单机部署</span>
+    </div>
+</aside>
+
+<!-- 展开导航按钮（汉堡） -->
+<button class="nav-toggle" id="nav-toggle" title="展开导航" aria-label="展开导航">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+</button>
+
+<!-- 透明点击捕获层：悬浮侧边栏打开时点击外部关闭 -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- ==================== 正文 ==================== -->
+<main class="content" id="main-content">
+    <div class="content-inner">
+
+        <!-- 文档头 -->
+        <header class="doc-hero reveal">
+            <p class="eyebrow">Project Overview · 项目介绍</p>
+            <h1 class="doc-title">企业员工管理系统（EAM）项目介绍</h1>
+            <p class="hero-deck">一个面向中小企业人事管理场景的 Web 应用系统，覆盖员工信息管理、考勤打卡、请假审批、薪资管理、数据看板等核心人事业务，支持本地单机部署。</p>
+            <div class="hero-meta">
+                <span class="meta-badge"><span class="meta-label">后端</span>Java 17 · Spring Boot 2.7</span>
+                <span class="meta-badge"><span class="meta-label">前端</span>Vue 3 · Vite 6</span>
+                <span class="meta-badge"><span class="meta-label">数据库</span>MySQL 8.0</span>
+                <span class="meta-badge"><span class="meta-label">部署</span>本地单机</span>
+            </div>
+        </header>
+
+        <!-- 01 项目名称 -->
+        <section class="section reveal" id="project-name" aria-label="项目名称">
+            <h2>项目名称</h2>
+            <div class="card-elevated name-card">
+                <p class="project-full-name"><strong>企业员工管理系统（Enterprise Employee Management System，简称 EAM）</strong></p>
+                <p>一个面向中小企业人事管理场景的 Web 应用系统，覆盖员工信息管理、考勤打卡、请假审批、薪资管理、数据看板等核心人事业务，支持本地单机部署。</p>
+            </div>
+        </section>
+
+        <!-- 02 业务场景 -->
+        <section class="section reveal" id="business-scenario" aria-label="业务场景">
+            <h2>业务场景</h2>
+            <p>中小企业在日常人事管理中存在以下典型痛点：</p>
+            <div class="card-grid">
+                <article class="card-outlined pain-card">
+                    <h4>员工信息分散</h4>
+                    <p>员工档案、组织架构、职位信息缺乏统一管理，查找与维护困难。</p>
+                </article>
+                <article class="card-outlined pain-card">
+                    <h4>考勤依赖人工</h4>
+                    <p>上下班打卡靠纸质或口头记录，迟到、早退、缺卡无法自动判定。</p>
+                </article>
+                <article class="card-outlined pain-card">
+                    <h4>请假流程冗长</h4>
+                    <p>请假申请线下流转，审批人指派不明确，进度无法跟踪。</p>
+                </article>
+                <article class="card-outlined pain-card">
+                    <h4>薪资核算繁琐</h4>
+                    <p>基本工资、奖金、津贴、扣款分散记录，实发金额人工计算易出错。</p>
+                </article>
+                <article class="card-outlined pain-card">
+                    <h4>缺乏全局视角</h4>
+                    <p>管理层无法快速掌握员工总数、部门构成、待审批事项等经营数据。</p>
+                </article>
+            </div>
+            <p>EAM 系统针对上述问题，将人事管理核心流程线上化、规范化、自动化，帮助中小企业在不引入重型系统的前提下，快速建立数字化人事管理能力。</p>
+        </section>
+
+        <!-- 03 核心功能 -->
+        <section class="section reveal" id="core-features" aria-label="核心功能">
+            <h2>核心功能</h2>
+
+            <section class="sub-section" id="core-login" aria-label="登录与身份认证">
+                <h3>1. 登录与身份认证</h3>
+                <ul>
+                    <li>基于 Sa-Token 的无状态 Token 认证，登录后获得 Bearer Token。</li>
+                    <li>内置四种角色：<code>admin</code>（系统管理员）、<code>hr</code>（人事）、<code>supervisor</code>（部门主管）、<code>employee</code>（普通员工）。</li>
+                    <li>除登录、接口文档等白名单路径外，所有接口均需登录后访问。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-dashboard" aria-label="数据看板">
+                <h3>2. 数据看板</h3>
+                <ul>
+                    <li>一屏汇总核心指标：员工总数、在职员工数、本月新入职、部门数量、待审批请假、今日打卡人数、今日迟到人数。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-org" aria-label="组织架构管理">
+                <h3>3. 组织架构管理</h3>
+                <ul>
+                    <li><strong>部门管理</strong>：树形结构（根部门 + 子部门），支持新增、编辑、删除，可设置部门主管（<code>manager_id</code>）。</li>
+                    <li><strong>职位管理</strong>：职位名称、所属部门、职级（P1–P8），支持增删改。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-employee" aria-label="员工管理">
+                <h3>4. 员工管理</h3>
+                <ul>
+                    <li>员工档案增删改查，字段含姓名、工号（唯一）、部门、职位、入职日期、手机、邮箱、性别、出生日期。</li>
+                    <li>支持按姓名/工号搜索、按部门筛选。</li>
+                    <li>支持离职办理（状态流转）与删除（逻辑删除）。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-attendance" aria-label="考勤管理">
+                <h3>5. 考勤管理</h3>
+                <ul>
+                    <li>上下班打卡（<code>clock_in</code> / <code>clock_out</code>），同一天同一员工仅一条记录。</li>
+                    <li>依据考勤规则（上班/下班时间、迟到/早退阈值）自动判定状态（正常/迟到/早退/缺卡）。</li>
+                    <li>支持按员工、日期区间查询考勤记录。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-leave" aria-label="请假管理">
+                <h3>6. 请假管理</h3>
+                <ul>
+                    <li>员工提交请假申请（年假/病假/事假/婚假），系统自动计算请假天数。</li>
+                    <li><strong>单级审批</strong>：自动将部门主管设为审批人（<code>approver_id</code>），主管可批准或拒绝。</li>
+                    <li>审批结果通过 WebSocket 实时通知申请人。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="core-salary" aria-label="薪资管理">
+                <h3>7. 薪资管理</h3>
+                <ul>
+                    <li>按员工 + 年月录入基本工资、奖金、津贴、扣款，系统自动计算实发工资。</li>
+                    <li>唯一约束保证同一员工同年月仅一条薪资记录，防止重复录入。</li>
+                </ul>
+            </section>
+        </section>
+
+        <!-- 04 案例特点 -->
+        <section class="section reveal" id="case-features" aria-label="案例特点">
+            <h2>案例特点</h2>
+
+            <section class="sub-section" id="case-architecture" aria-label="架构设计">
+                <h3>架构设计</h3>
+                <ul>
+                    <li><strong>简化 DDD 分层</strong>：<code>api</code>（接口层）→ <code>application</code>（应用编排）→ <code>domain</code>（领域层）→ <code>infrastructure</code>（基础设施层）。</li>
+                    <li><strong>领域层纯净</strong>：domain 实体为纯业务实体，不依赖 MyBatis/MySQL；仓储接口定义在 domain，实现在 infrastructure。</li>
+                    <li><strong>无外键设计</strong>：数据库不建外键，关联校验全部在业务层完成，逻辑删除保证核心业务数据不物理删除。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="case-tech-stack" aria-label="技术栈">
+                <h3>技术栈</h3>
+                <div class="table-wrap" tabindex="0">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">端</th>
+                                <th scope="col">技术栈</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>后端</td><td>Java 17、Spring Boot 2.7、MyBatis-Plus 3.5、Sa-Token、WebSocket、Knife4j（OpenAPI3）</td></tr>
+                            <tr><td>前端</td><td>Vue 3、Vite 6、Ant Design Vue 4、Pinia、TypeScript、Axios</td></tr>
+                            <tr><td>数据库</td><td>MySQL 8.0、InnoDB、utf8mb4</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="sub-section" id="case-engineering" aria-label="工程化亮点">
+                <h3>工程化亮点</h3>
+                <ul>
+                    <li><strong>零第三方运行时依赖</strong>：本地单机运行，不引入 Redis、消息队列、云存储等组件，开箱即用。</li>
+                    <li><strong>单页自包含交付</strong>：文档、接口文档（Knife4j）开箱即用，前后端分离部署。</li>
+                    <li><strong>代码结构清晰</strong>：按 DDD 分包，实体/仓储/服务职责明确，便于维护与扩展。</li>
+                    <li><strong>统一响应与异常处理</strong>：全局统一 Result 包装、全局异常拦截，接口返回格式稳定。</li>
+                </ul>
+            </section>
+
+            <section class="sub-section" id="case-data-design" aria-label="数据设计">
+                <h3>数据设计</h3>
+                <ul>
+                    <li>9 张业务表：部门、职位、员工、用户、考勤规则、打卡记录、请假申请、薪资、月度考勤统计。</li>
+                    <li>关键唯一索引：工号唯一、打卡（employee_id, date）唯一、薪资（employee_id, year, month）唯一。</li>
+                    <li>初始化内置：管理员 admin（密码 123456）、4 个部门、8 个职位、10 名员工及对应账号，便于演示与验收。</li>
+                </ul>
+            </section>
+        </section>
+
+        <!-- 05 运行环境 -->
+        <section class="section reveal" id="runtime-environment" aria-label="运行环境">
+            <h2>运行环境</h2>
+            <ul>
+                <li>JDK 17+、Maven 3.9+、Node.js 20+、MySQL 8.0。</li>
+                <li>后端默认端口 <code>8080</code>，前端开发服务器默认端口 <code>3000</code>，接口文档 <code>http://localhost:8080/doc.html</code>。</li>
+            </ul>
+        </section>
+
+        <!-- 文档页脚 -->
+        <footer class="doc-footer">
+            <span>企业员工管理系统（EAM）项目介绍</span>
+            <span class="footer-sep">·</span>
+            <span>由 Markdown 文档生成</span>
+            <span class="footer-sep">·</span>
+            <span>预设：Light Professional</span>
+        </footer>
+
+    </div>
+</main>
+
+<!-- 返回顶部按钮 -->
+<button class="back-to-top" id="back-to-top" aria-label="返回顶部" title="返回顶部">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ======================================================================
+       1. 平滑滚动控制器 —— 点击 TOC 链接平滑滚动并更新 URL hash
+       ====================================================================== */
+    class SmoothScrollController {
+        constructor() { this.setupListeners(); }
+
+        scrollToSection(targetId) {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({ top: targetPosition - 16, behavior: 'smooth' });
+            history.pushState(null, null, '#' + targetId);
+        }
+
+        setupListeners() {
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.scrollToSection(link.getAttribute('href').substring(1));
+                });
+            });
+        }
+    }
+
+    /* ======================================================================
+       2. 当前阅读区块高亮 —— IntersectionObserver 监听各 section，
+          命中时在侧边栏 TOC 中标记对应项（二级激活时父级同步提亮）
+       ====================================================================== */
+    class ActiveSectionTracker {
+        constructor() {
+            this.sections = Array.from(document.querySelectorAll('main section[id]'));
+            this.setupObserver();
+        }
+
+        setupObserver() {
+            const options = { root: null, rootMargin: '-90px 0px -66%', threshold: 0 };
+            this.observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) this.updateActiveTOC(entry.target.id);
+                });
+            }, options);
+            this.sections.forEach(section => this.observer.observe(section));
+        }
+
+        updateActiveTOC(sectionId) {
+            document.querySelectorAll('.toc-link.active').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.toc-parent.parent-active').forEach(l => l.classList.remove('parent-active'));
+
+            const activeLink = document.querySelector('.toc-link[href="#' + sectionId + '"]');
+            if (!activeLink) return;
+            activeLink.classList.add('active');
+
+            const parent = activeLink.closest('.toc-parent');
+            if (parent) parent.classList.add('parent-active');
+        }
+    }
+
+    /* ======================================================================
+       3. 实时搜索控制器 —— 高亮正文匹配项，支持 上一个/下一个 导航
+       ====================================================================== */
+    class SearchController {
+        constructor() {
+            this.searchInput = document.getElementById('search-input');
+            this.searchCount = document.getElementById('search-count');
+            this.prevBtn = document.getElementById('search-prev');
+            this.nextBtn = document.getElementById('search-next');
+            this.root = document.getElementById('main-content');
+            this.matches = [];
+            this.currentIndex = -1;
+            this.setupListeners();
+        }
+
+        escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+        search(query) {
+            this.clearHighlights();
+            this.matches = [];
+            this.currentIndex = -1;
+
+            if (!query || query.length < 2) { this.updateUI(0); return; }
+
+            const safe = this.escapeRegex(query);
+            const re = new RegExp('(' + safe + ')', 'gi');
+
+            // 以整个正文为根做一次遍历，避免嵌套 section 造成重复标记
+            const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT);
+            const nodes = [];
+            let node;
+            while ((node = walker.nextNode())) {
+                if (node.parentElement.closest('script, style, mark, pre')) continue;
+                if (re.test(node.textContent)) nodes.push(node);
+                re.lastIndex = 0;
+            }
+            nodes.forEach(n => {
+                const span = document.createElement('span');
+                span.innerHTML = n.textContent.replace(re, '<mark>$1</mark>');
+                n.parentNode.replaceChild(span, n);
+            });
+
+            this.matches = Array.from(document.querySelectorAll('mark'));
+            this.updateUI(this.matches.length);
+            if (this.matches.length > 0) { this.currentIndex = 0; this.scrollToMatch(0); }
+        }
+
+        scrollToMatch(index) {
+            this.matches.forEach(m => m.classList.remove('mark-active'));
+            const target = this.matches[index];
+            if (!target) return;
+            target.classList.add('mark-active');
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            this.updateUI(this.matches.length);
+        }
+
+        next() {
+            if (!this.matches.length) return;
+            this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+            this.scrollToMatch(this.currentIndex);
+        }
+
+        prev() {
+            if (!this.matches.length) return;
+            this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+            this.scrollToMatch(this.currentIndex);
+        }
+
+        updateUI(total) {
+            this.searchCount.textContent = total === 0
+                ? (this.searchInput.value.length >= 2 ? '无结果' : '')
+                : (this.currentIndex + 1) + ' / ' + total;
+            const show = total > 0;
+            if (this.prevBtn) this.prevBtn.style.display = show ? 'inline-flex' : 'none';
+            if (this.nextBtn) this.nextBtn.style.display = show ? 'inline-flex' : 'none';
+        }
+
+        clearHighlights() {
+            // normalize() 合并多次搜索后产生的碎片文本节点
+            document.querySelectorAll('mark').forEach(mark => mark.replaceWith(mark.textContent));
+            this.root.normalize();
+        }
+
+        setupListeners() {
+            this.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { this.searchInput.value = ''; this.search(''); }
+                if (e.key === 'Enter') { e.shiftKey ? this.prev() : this.next(); }
+            });
+
+            this.prevBtn && this.prevBtn.addEventListener('click', () => this.prev());
+            this.nextBtn && this.nextBtn.addEventListener('click', () => this.next());
+        }
+    }
+
+    /* ======================================================================
+       4. 侧边栏控制器 —— 桌面钉住/悬浮切换 + 移动端开合，状态持久化
+       ====================================================================== */
+    class SidebarController {
+        constructor() {
+            this.sidebar = document.getElementById('nav-sidebar');
+            this.pinBtn = document.getElementById('sidebar-pin-btn');
+            this.toggle = document.getElementById('nav-toggle');
+            this.overlay = document.getElementById('sidebar-overlay');
+            this.isMobile = () => window.innerWidth <= 767;
+
+            // 恢复钉住状态（桌面默认钉住；移动端强制悬浮）
+            const saved = localStorage.getItem('sidebar-pinned');
+            const pinned = this.isMobile() ? false : (saved === null ? true : saved === 'true');
+            this.setPinned(pinned, false);
+
+            this.setupListeners();
+        }
+
+        setPinned(pinned, animate) {
+            if (animate === false) this.sidebar.style.transition = 'none';
+
+            document.body.classList.remove('sidebar-pinned-left', 'sidebar-pinned-right');
+
+            if (pinned) {
+                this.sidebar.classList.add('pinned');
+                this.sidebar.classList.remove('open');
+                document.body.classList.add('sidebar-pinned-left');
+                this.overlay.classList.remove('visible');
+            } else {
+                this.sidebar.classList.remove('pinned');
+                this.close();
+            }
+
+            this.syncPinButton(pinned);
+            localStorage.setItem('sidebar-pinned', String(pinned));
+
+            if (animate === false) {
+                requestAnimationFrame(() => { this.sidebar.style.transition = ''; });
+            }
+        }
+
+        syncPinButton(pinned) {
+            if (!this.pinBtn) return;
+            const label = pinned ? 'Collapse navigation' : 'Pin navigation';
+            this.pinBtn.title = label;
+            this.pinBtn.setAttribute('aria-label', label);
+        }
+
+        open() {
+            this.sidebar.classList.add('open');
+            this.overlay.classList.add('visible');
+        }
+
+        close() {
+            this.sidebar.classList.remove('open');
+            this.overlay.classList.remove('visible');
+        }
+
+        setupListeners() {
+            // 悬浮时点击 = 钉住；固定后点击 = 收起（一次点击完成）
+            this.pinBtn && this.pinBtn.addEventListener('click', () => {
+                this.setPinned(!this.sidebar.classList.contains('pinned'));
+            });
+
+            this.toggle && this.toggle.addEventListener('click', () => {
+                this.sidebar.classList.contains('open') ? this.close() : this.open();
+            });
+
+            this.overlay.addEventListener('click', () => this.close());
+
+            window.addEventListener('resize', () => {
+                if (this.isMobile()) this.setPinned(false);
+            }, { passive: true });
+        }
+    }
+
+    /* ======================================================================
+       5. 返回顶部按钮 —— 滚动超过一屏高度后显现
+       ====================================================================== */
+    class BackToTop {
+        constructor() {
+            this.btn = document.getElementById('back-to-top');
+            if (!this.btn) return;
+            this.threshold = window.innerHeight;
+            this.setupListeners();
+        }
+
+        setupListeners() {
+            window.addEventListener('scroll', () => {
+                this.btn.classList.toggle('visible', window.scrollY > this.threshold);
+            }, { passive: true });
+
+            this.btn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    }
+
+    /* ======================================================================
+       6. 代码语法高亮（轻量正则版）—— 处理 pre code 块
+       ====================================================================== */
+    function highlightCode() {
+        document.querySelectorAll('pre code').forEach(block => {
+            if (block.dataset.highlighted) return;
+            const language = (block.className.replace('language-', '') || 'javascript').toLowerCase();
+            block.innerHTML = applyHighlighting(block.textContent.replace(/\n+$/, ''), language);
+            block.dataset.highlighted = '1';
+        });
+    }
+
+    function applyHighlighting(code, language) {
+        const keywords = {
+            javascript: ['function','const','let','var','return','if','else','for','while','class','new','this','import','export','async','await','true','false'],
+            bash: ['cd','npm','mvn','java','node','mysql','echo','export','mkdir','install','run','start'],
+            java: ['public','private','protected','class','interface','extends','implements','return','void','new','import','package','static','final','String','int','long','boolean','throw','throws'],
+            sql: ['SELECT','FROM','WHERE','INSERT','INTO','VALUES','CREATE','TABLE','INDEX','UNIQUE','KEY','NOT','NULL','PRIMARY','REFERENCES'],
+            yaml: [],
+            json: []
+        };
+
+        let out = code;
+        // 注释（行内 // 、块 /* */ 、# 与 --）
+        out = out.replace(/(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$|--.*$)/gm, '<span class="token-comment">$1</span>');
+        // 字符串
+        out = out.replace(/(["'`])(?:(?=(\\?))\2.)*?\1/g, '<span class="token-string">$&</span>');
+        // 数字
+        out = out.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="token-number">$1</span>');
+        // 关键字
+        (keywords[language] || []).forEach(kw => {
+            const regex = new RegExp('\\b' + kw + '\\b', 'g');
+            out = out.replace(regex, '<span class="token-keyword">' + kw + '</span>');
+        });
+        return out;
+    }
+
+    /* ======================================================================
+       7. 阅读进度条 —— 顶部 3px 靛蓝细线随滚动填充
+       ====================================================================== */
+    function setupReadingProgress() {
+        const bar = document.getElementById('reading-progress');
+        if (!bar) return;
+        const update = () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+        };
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update, { passive: true });
+        update();
+    }
+
+    /* ======================================================================
+       8. 滚动显现动画 —— 进入视口后淡入上移；自动为标题补充悬停锚点
+       ====================================================================== */
+    function setupReveals() {
+        const els = document.querySelectorAll('.reveal');
+        if (!('IntersectionObserver' in window)) {
+            els.forEach(el => el.classList.add('visible'));
+            return;
+        }
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+        els.forEach(el => observer.observe(el));
+    }
+
+    function setupHeadingAnchors() {
+        document.querySelectorAll('.content-inner h2[id], .content-inner h3[id], .content-inner h4[id]').forEach(heading => {
+            if (heading.querySelector('.heading-anchor')) return;
+            const anchor = document.createElement('a');
+            anchor.className = 'heading-anchor';
+            anchor.href = '#' + heading.id;
+            anchor.textContent = '#';
+            anchor.setAttribute('aria-label', '链接到：' + heading.textContent.trim());
+            heading.appendChild(anchor);
+        });
+    }
+
+    /* ======================================================================
+       9. 初始化全部模块
+       ====================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+        new SmoothScrollController();
+        new ActiveSectionTracker();
+        new SearchController();
+        new SidebarController();
+        new BackToTop();
+        highlightCode();
+        setupReadingProgress();
+        setupReveals();
+        setupHeadingAnchors();
+    });
+})();
+</script>
+</body>
+</html>

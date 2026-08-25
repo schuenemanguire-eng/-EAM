@@ -1,0 +1,31 @@
+# CloudStudio 工作空间定义
+# 导入 GitHub 仓库后，如使用该模板方式创建应用可参考此文件。
+# sidecar.mysql 预装 MySQL，自动创建 eam_db 库；密码 123456，需与后端配置一致。
+---
+name: "enterprise-employee-management"
+description: "企业员工管理系统（EAM）- 前后端全栈项目"
+tags:
+  - "Java"
+  - "Vue"
+  - "Spring Boot"
+  - "MySQL"
+ref: "main"
+envs:
+  - name: "NODE_ENV"
+    value: "development"
+extensions:
+  - "vscjava.vscode-java-pack@0.27.0"
+  - "ms-vscode.vscode-typescript-language-features@1.1.0"
+lifecycle:
+  init:
+    - name: "更新系统包"
+      command: "apt-get update"
+  start: []
+  destroy: []
+sidecar:
+  mysql:
+    enabled: true
+    password: "123456"
+    database: "eam_db"
+  redis:
+    enabled: false

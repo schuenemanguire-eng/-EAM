@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="企业员工管理系统（EAM）项目汇报 · 2026-08">
+    <title>企业员工管理系统 项目汇报</title>
+
+    <!-- 字体：Sofia Sans（展示/正文）+ JetBrains Mono / Roboto Mono（代码/数字）——Google Fonts，唯一的 CDN 依赖 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Roboto+Mono:wght@400;500&family=Sofia+Sans:opsz,wght@8..144,400;8..144,450;8..144,500;8..144,700&display=swap">
+
+    <!-- 提前打上 js 标记：仅当 JS 可用时才启用滚动显现动画，避免无 JS 时内容被隐藏 -->
+    <script>document.documentElement.classList.add('js');</script>
+
+    <style>
+        /* ============================================================
+           0. CSS 自定义属性（主题令牌）—— 采用 "3 — Warm Orbit" 预设
+           ============================================================ */
+        :root {
+            /* 颜色：暖奶油画布 / 暖黑文字 / 橙色轨道点缀 */
+            --bg-primary:   #f3f0ee;  /* 页面暖奶油画布 */
+            --bg-surface:   #fcfbfa;  /* 表面（幻灯片、卡片、侧栏、代码块） */
+            --text-primary: #141413;  /* 暖黑文字 */
+            --text-secondary: #696969;
+            --border:       #d8d3ce;  /* 暖灰描边 */
+            --accent:       #9a3a0a;  /* 主强调（橙棕） */
+            --accent-orbit: #f37338;  /* 轨道橙：仅用于细装饰路径与小圆点 */
+            --signal:       #cf4500;  /* 信号色（合规类），本页不使用 */
+            --footer-bg:    #141413;  /* 暖黑（主按钮 / 返回顶部） */
+            --code-bg:      #fcfbfa;  /* 代码块底色 */
+
+            /* 字体族 */
+            --font-display: 'Sofia Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            --font-body:    'Sofia Sans', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            --font-code:    'JetBrains Mono', 'Microsoft YaHei', monospace;
+            --font-numeric: 'Roboto Mono', 'Microsoft YaHei', monospace;
+
+            /* 大圆角 */
+            --radius-action: 20px;   /* 操作 / 卡片 */
+            --radius-frame:  40px;   /* 大框架（幻灯片、侧栏） */
+            --radius-pill:   999px;  /* 胶囊（导航、标签） */
+
+            /* 字号与行高（Warm Orbit 刻度） */
+            --text-body:    0.875rem; /* 14px 正文 */
+            --text-small:   0.75rem;  /* 12px 工具 / eyebrow */
+            --text-mono-label: 0.75rem;
+            --lh-body:      1.55;
+            --lh-heading:   1.1;
+            --chart-text-size: 13px;  /* 全局图表文字（本页无图表，保留令牌） */
+
+            /* 布局：全局阅读宽度契约（系统常量，不可覆盖） */
+            --content-max-width: 1220px;
+            --content-gutter: 32px;
+            --sidebar-width: 300px;
+        }
+
+        /* ============================================================
+           1. 基础重置
+           ============================================================ */
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: var(--text-body);
+            font-weight: 450;
+            line-height: var(--lh-body);
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote { margin: 0; }
+        ul, ol { padding: 0; }
+        a { color: var(--accent); }
+        img { max-width: 100%; display: block; }
+
+        /* 可访问性：键盘焦点可见样式 */
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+        /* 跳过导航链接 */
+        .skip-link {
+            position: fixed; top: -100px; left: 1rem; z-index: 99999;
+            background: var(--footer-bg); color: #fcfbfa; padding: .6rem 1rem;
+            border-radius: var(--radius-pill); text-decoration: none;
+            font-size: var(--text-small); font-weight: 700;
+            transition: top .2s ease;
+        }
+        .skip-link:focus { top: 1rem; }
+
+        /* ============================================================
+           2. 排版 —— 标题层级（H1 48 / H2 30 / H3 20，均 -0.02em）
+           ============================================================ */
+        h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.02em; line-height: var(--lh-heading); }
+        h1 { font-size: 48px; }
+        h2 { font-size: 30px; }
+        h3 { font-size: 20px; line-height: 1.25; }
+
+        /* eyebrow 标签：12px / 700 / 0.04em 大写，前缀小橙点 */
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: .5rem;
+            font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+            color: var(--accent); margin-bottom: .5rem;
+        }
+        .eyebrow::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-orbit); flex-shrink: 0; }
+
+        /* 数字元素统一等宽数字字形 */
+        .stat-number, time, b, strong, .slide-watermark, .outline-num, .kpi-stats b, th, td {
+            font-variant-numeric: tabular-nums; font-feature-settings: "tnum";
+        }
+
+        /* ============================================================
+           3. 阅读进度条（顶部细线）
+           ============================================================ */
+        .reading-progress {
+            position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+            background: var(--accent-orbit); z-index: 9999; pointer-events: none;
+            transition: width .1s linear;
+        }
+
+        /* ============================================================
+           4. 侧边栏导航（Warm Orbit：左侧浮动、40px 圆角）
+           两种状态：pinned（常驻并推动内容）/ floating（悬浮覆盖）
+           ============================================================ */
+        .nav-sidebar {
+            position: fixed; top: 20px; bottom: 20px; height: calc(100vh - 40px);
+            width: var(--sidebar-width);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-frame);
+            overflow-y: auto; overflow-x: hidden;
+            padding: 1.75rem 1.5rem;
+            z-index: 1000;
+            box-shadow: 0 4px 24px rgba(0,0,0,.04); /* 克制阴影 */
+            transition: transform .3s cubic-bezier(.4,0,.2,1), box-shadow .3s ease;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .nav-sidebar-left { left: 16px; }
+
+        /* 悬浮（未固定）状态：整体滑出屏幕，仅露出阴影 */
+        .nav-sidebar-left:not(.pinned) { transform: translateX(calc(-100% - 48px)); box-shadow: 8px 0 32px rgba(0,0,0,.10); }
+        .nav-sidebar:not(.pinned).open { transform: translateX(0); }
+
+        /* 固定状态：常驻，推动正文右移 */
+        .nav-sidebar.pinned { transform: translateX(0); box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+        body.sidebar-pinned-left .content { margin-left: calc(var(--sidebar-width) + 48px); }
+
+        /* ---- 侧栏头部：品牌名 + 固定/折叠按钮 ---- */
+        .nav-header {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem;
+            padding-bottom: 1.25rem; margin-bottom: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-brand { min-width: 0; }
+        .nav-brand-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 0 0 .25rem; }
+        .nav-brand-sub { font-size: var(--text-small); color: var(--text-secondary); letter-spacing: .04em; }
+
+        .sidebar-pin-btn {
+            flex-shrink: 0; background: none; cursor: pointer;
+            border: 1px solid var(--border); border-radius: var(--radius-pill);
+            padding: .45rem; color: var(--text-secondary);
+            display: flex; align-items: center; justify-content: center;
+            transition: color .2s, border-color .2s, background .2s;
+        }
+        .sidebar-pin-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .sidebar-pin-btn svg { width: 18px; height: 18px; }
+        .sidebar-pin-btn .collapse-icon { display: none; }
+        .nav-sidebar.pinned .sidebar-pin-btn .pin-icon { display: none; }
+        .nav-sidebar.pinned .sidebar-pin-btn .collapse-icon { display: block; }
+
+        /* ---- 实时搜索 ---- */
+        .nav-search { display: flex; align-items: center; gap: .4rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+        .nav-search input[type="search"] {
+            flex: 1 1 100%; min-width: 0;
+            font-family: var(--font-body); font-size: var(--text-small); font-weight: 450;
+            color: var(--text-primary);
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-pill); padding: .55rem .9rem;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .nav-search input[type="search"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-orbit) 20%, transparent); }
+        .search-nav-btn {
+            padding: .35rem .6rem; border: 1px solid var(--border); border-radius: var(--radius-pill);
+            background: var(--bg-surface); color: var(--text-secondary); cursor: pointer;
+            font-size: .85rem; line-height: 1; font-family: var(--font-body);
+            transition: all .15s;
+        }
+        .search-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .search-count { font-family: var(--font-numeric); font-size: var(--text-mono-label); color: var(--text-secondary); margin-left: auto; }
+
+        /* 搜索结果高亮 */
+        mark { background: color-mix(in srgb, var(--accent-orbit) 45%, transparent); color: var(--text-primary); border-radius: 3px; padding: 0 2px; }
+        mark.mark-active { background: var(--accent-orbit); color: #fff; outline: 2px solid var(--accent-orbit); }
+
+        /* ---- TOC 目录 ---- */
+        .toc { font-size: var(--text-small); }
+        .toc-list { list-style: none; display: flex; flex-direction: column; gap: .15rem; }
+        .toc-list li { margin: 0; }
+        .toc-link {
+            display: block; padding: .55rem .85rem; border-radius: var(--radius-pill);
+            color: var(--text-secondary); text-decoration: none; line-height: 1.35;
+            transition: color .2s ease, background-color .2s ease, padding-left .2s ease;
+        }
+        .toc-link:hover { color: var(--text-primary); background: color-mix(in srgb, var(--accent-orbit) 8%, transparent); }
+        /* 激活项：轨道橙淡染 + 胶囊 + 微缩进（Warm Orbit TOC 激活样式） */
+        .toc-link.active {
+            color: var(--text-primary);
+            background: color-mix(in srgb, var(--accent-orbit) 12%, transparent);
+            border-radius: 999px;
+            padding-left: 1.25rem; font-weight: 500;
+        }
+
+        /* ---- 透明点击捕获遮罩（悬浮侧栏打开时，点击外部关闭） ---- */
+        .sidebar-overlay {
+            position: fixed; inset: 0; background: transparent; z-index: 999;
+            opacity: 0; pointer-events: none; transition: opacity .2s ease;
+        }
+        .sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
+
+        /* ---- 展开按钮（汉堡） ---- */
+        .nav-toggle {
+            position: fixed; top: 1rem; left: 1rem; z-index: 998;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-pill); padding: .5rem .7rem; cursor: pointer;
+            color: var(--text-primary); display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 24px rgba(0,0,0,.04); transition: opacity .2s;
+        }
+        .nav-toggle svg { width: 20px; height: 20px; }
+        body.sidebar-pinned-left .nav-toggle { display: none; }
+
+        /* ============================================================
+           5. 主内容区 —— 1220px 内容壳 + 32px 双侧槽
+           ============================================================ */
+        .content {
+            padding-block: 3rem;
+            transition: margin .3s cubic-bezier(.4,0,.2,1);
+        }
+        .content-inner {
+            width: min(calc(100% - var(--content-gutter) - var(--content-gutter)), var(--content-max-width));
+            max-width: var(--content-max-width);
+            margin-inline: auto;
+        }
+
+        /* ============================================================
+           6. 幻灯片区块（长页滚动式幻灯片）
+           ============================================================ */
+        .slide {
+            position: relative;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-frame);
+            padding: clamp(1.75rem, 4vw, 3rem);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            scroll-margin-top: 1.5rem;
+        }
+        /* 正文层级高于装饰元素（轨道圆/水印），保证不遮蔽内容 */
+        .slide > :not(.orbit):not(.slide-watermark) { position: relative; z-index: 1; }
+
+        .section-head { margin-bottom: 1.5rem; }
+        .section-head h2 { margin: 0; }
+
+        /* 幻灯片水印编号（纯装饰，右上角，背后置层） */
+        .slide-watermark {
+            position: absolute; top: .5rem; right: 1.25rem; z-index: 0;
+            font-family: var(--font-numeric); font-weight: 700; font-size: clamp(3.5rem, 7vw, 6rem);
+            color: transparent; -webkit-text-stroke: 1px var(--border); opacity: .8;
+            pointer-events: none; user-select: none; line-height: 1;
+        }
+
+        /* 轨道装饰圆（纯装饰，不承载数据；仅封面使用） */
+        .orbit { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+        .orbit-a { width: 240px; height: 240px; top: -90px; right: -70px; border: 1.5px solid var(--accent-orbit); opacity: .5; }
+        .orbit-b { width: 400px; height: 400px; top: -160px; right: -120px; border: 1.5px solid transparent; border-top-color: var(--accent-orbit); opacity: .45; }
+        .orbit-c { width: 14px; height: 14px; top: 84px; right: 130px; background: var(--accent-orbit); opacity: .8; border: none; }
+        .orbit-d { width: 8px; height: 8px; bottom: 56px; right: 60px; background: var(--accent); opacity: .35; border: none; }
+
+        /* 段落级醒目小标题（由 md 加粗导语升级而来，增强层次） */
+        .lead { margin: 0 0 .6rem; }
+        .slide h3.lead + * { margin-top: .25rem; }
+
+        /* ---- 汇报大纲：编号卡片网格 ---- */
+        .outline-list { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+        .outline-item {
+            display: flex; align-items: center; gap: .9rem;
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: .95rem 1.15rem;
+            transition: border-color .2s, transform .2s;
+        }
+        .outline-item:hover { border-color: var(--accent-orbit); transform: translateY(-2px); }
+        .outline-num {
+            flex-shrink: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-numeric); font-size: 13px; font-weight: 500;
+            color: var(--accent); background: color-mix(in srgb, var(--accent-orbit) 14%, transparent);
+            border-radius: var(--radius-pill);
+        }
+
+        /* ---- 要点卡片（背景/目标/要点列表） ---- */
+        .bullet-list { list-style: none; display: flex; flex-direction: column; gap: .7rem; margin-bottom: 1.5rem; }
+        .bullet-list .bullet-card:last-child { margin-bottom: 0; }
+        .bullet-card {
+            display: flex; gap: .75rem; align-items: flex-start;
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: .95rem 1.15rem;
+        }
+        .bullet-card::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-orbit); margin-top: .5rem; flex-shrink: 0; }
+        .sub-list { list-style: none; margin-top: .55rem; display: flex; flex-direction: column; gap: .3rem; }
+        .sub-list li { padding-left: 1rem; position: relative; color: var(--text-secondary); font-size: var(--text-small); }
+        .sub-list li::before { content: ''; position: absolute; left: .1rem; top: .5em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent-orbit); }
+
+        /* ---- 功能卡片网格（系统功能概览） ---- */
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .9rem; }
+        .feature-card {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: 1.15rem 1.25rem;
+            transition: border-color .2s, transform .2s;
+        }
+        .feature-card:hover { border-color: var(--accent-orbit); transform: translateY(-2px); }
+        .feature-card h3 { font-size: 1.0625rem; margin: 0 0 .4rem; }
+        .feature-card p { font-size: var(--text-small); color: var(--text-secondary); }
+
+        /* ---- 技术架构：行 + 技术胶囊 ---- */
+        .arch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .9rem; margin-bottom: 1.5rem; }
+        .arch-row {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: 1.15rem 1.25rem;
+        }
+        .arch-row h3 { font-size: 1rem; margin: 0 0 .6rem; color: var(--accent); }
+        .chip-list { list-style: none; display: flex; flex-wrap: wrap; gap: .45rem; }
+        .chip-list li {
+            font-family: var(--font-code); font-size: .8125rem;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-pill); padding: .32rem .75rem;
+            color: var(--text-primary);
+        }
+
+        /* ---- KPI 数据行（项目成果） ---- */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .9rem; margin-bottom: 1.5rem; }
+        .kpi-card {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: 1.35rem 1.5rem;
+        }
+        .kpi-card h3 { font-size: 1rem; margin: 0 0 .9rem; color: var(--text-secondary); font-weight: 500; }
+        .kpi-stats { list-style: none; display: flex; flex-wrap: wrap; gap: 1rem .9rem; }
+        .kpi-stats li { display: flex; flex-direction: column; align-items: baseline; gap: .1rem; }
+        .kpi-stats b { font-family: var(--font-numeric); font-size: 2rem; font-weight: 500; color: var(--accent); line-height: 1; }
+        .kpi-stats span { font-size: var(--text-small); color: var(--text-secondary); }
+
+        /* ---- 数据表格（端口 / 问题修复） ---- */
+        .table-wrap {
+            overflow-x: auto; -webkit-overflow-scrolling: touch;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: .5rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.05);
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 480px; }
+        caption { text-align: left; font-size: var(--text-small); font-weight: 700; color: var(--text-secondary); padding: .5rem .75rem .75rem; }
+        th, td { padding: .75rem .9rem; text-align: left; font-size: .875rem; }
+        thead th {
+            font-weight: 700; color: var(--text-primary);
+            background: color-mix(in srgb, var(--accent-orbit) 9%, transparent);
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+        }
+        tbody tr { transition: background-color .15s ease; }
+        tbody tr:hover { background: color-mix(in srgb, var(--accent-orbit) 5%, transparent); }
+        tbody td { border-bottom: 1px solid var(--border); color: var(--text-primary); }
+        tbody tr:last-child td { border-bottom: 0; }
+        th[scope="row"] { font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+        td { font-family: var(--font-body); }
+
+        /* ---- 代码块（请假流程图） ---- */
+        .code-block { position: relative; margin: 0 0 1.5rem; }
+        .code-block pre {
+            background: var(--code-bg); border: 1px solid var(--border);
+            border-radius: var(--radius-action); padding: 1.4rem 1.5rem;
+            overflow-x: auto; margin: 0;
+        }
+        .code-block code {
+            font-family: var(--font-code); font-size: .8125rem; line-height: 1.7;
+            color: var(--text-primary); white-space: pre;
+        }
+        /* 流程图语法高亮：连接符/箭头（轨道橙）、技术名词（主强调） */
+        .tok-flow { color: var(--accent-orbit); font-weight: 500; }
+        .tok-tech { color: var(--accent); font-weight: 500; }
+
+        /* 复制按钮（微交互） */
+        .copy-btn {
+            position: absolute; top: .6rem; right: .6rem;
+            padding: .3rem .7rem; font-size: .72rem; font-family: var(--font-code);
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: var(--radius-pill); cursor: pointer; color: var(--text-secondary);
+            opacity: 0; transition: opacity .2s, color .2s, border-color .2s;
+        }
+        .code-block:hover .copy-btn { opacity: 1; }
+        .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+        /* 流程要点总结 */
+        .flow-summary {
+            display: inline-flex; align-items: center; gap: .5rem;
+            padding: .6rem 1.1rem; border: 1px solid var(--border);
+            border-radius: var(--radius-pill); background: var(--bg-primary);
+            font-weight: 500; font-size: .9375rem;
+        }
+        .flow-summary::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-orbit); }
+
+        /* 结尾致谢 */
+        .closing {
+            text-align: center; font-size: clamp(1.25rem, 3vw, 1.75rem); font-weight: 500;
+            letter-spacing: -0.02em; padding: 2rem 1rem 1rem; color: var(--accent);
+        }
+
+        /* 长链接（锚点）下划线动画（微交互） */
+        .content a { text-decoration: none; background-image: linear-gradient(var(--accent), var(--accent)); background-size: 0% 1px; background-repeat: no-repeat; background-position: left bottom; transition: background-size .3s ease; }
+        .content a:hover { background-size: 100% 1px; }
+
+        /* ============================================================
+           7. 返回顶部按钮（暖黑 + 奶油文字 + 胶囊）
+           ============================================================ */
+        .back-to-top {
+            position: fixed; bottom: 2rem; right: 2rem; z-index: 900;
+            width: 46px; height: 46px; border-radius: var(--radius-pill);
+            background: var(--footer-bg); color: #fcfbfa; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 24px rgba(0,0,0,.14);
+            opacity: 0; transform: translateY(12px); pointer-events: none;
+            transition: opacity .25s ease, transform .25s ease;
+        }
+        .back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .back-to-top:hover { transform: translateY(-2px); }
+        .back-to-top svg { width: 18px; height: 18px; }
+
+        /* ============================================================
+           8. 滚动显现动画（仅 .js 生效；慢速、温润）
+           ============================================================ */
+        .js .slide { opacity: 0; transform: translateY(24px); transition: opacity .6s ease-out, transform .6s ease-out; }
+        .js .slide.visible { opacity: 1; transform: translateY(0); }
+        .js .stagger-children > * { opacity: 0; transform: translateY(16px); transition: opacity .45s ease-out, transform .45s ease-out; }
+        .js .stagger-children.visible > *:nth-child(1) { transition-delay: .05s; }
+        .js .stagger-children.visible > *:nth-child(2) { transition-delay: .1s; }
+        .js .stagger-children.visible > *:nth-child(3) { transition-delay: .15s; }
+        .js .stagger-children.visible > *:nth-child(4) { transition-delay: .2s; }
+        .js .stagger-children.visible > *:nth-child(5) { transition-delay: .25s; }
+        .js .stagger-children.visible > *:nth-child(6) { transition-delay: .3s; }
+        .js .stagger-children.visible > *:nth-child(7) { transition-delay: .35s; }
+        .js .stagger-children.visible > *:nth-child(8) { transition-delay: .4s; }
+        .js .stagger-children.visible > * { opacity: 1; transform: translateY(0); }
+
+        /* 减少动态偏好：关闭过渡 */
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition: none !important; animation: none !important; }
+            .js .slide, .js .stagger-children > * { opacity: 1; transform: none; }
+        }
+
+        /* ============================================================
+           9. 响应式
+           - 桌面 ≥1024：侧栏常驻（可 pin/unpin）
+           - 平板 768–1023：侧栏可折叠，轨道装饰双列
+           - 移动 <768：侧栏悬浮覆盖层，H1 缩至 36px，装饰弧移除
+           ============================================================ */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            :root { --sidebar-width: 260px; }
+            .content { padding-block: 2rem; }
+            .outline-list { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 767px) {
+            :root { --sidebar-width: min(300px, 86vw); }
+            .nav-sidebar { top: 0; bottom: 0; left: 0; height: 100vh; border-radius: 0 var(--radius-frame) var(--radius-frame) 0; box-shadow: 4px 0 24px rgba(0,0,0,.12); }
+            body.sidebar-pinned-left .content { margin-left: 0; }
+            .nav-sidebar-left:not(.pinned) { transform: translateX(-105%); }
+            .nav-toggle { display: flex !important; }
+            .sidebar-pin-btn { display: none; } /* 移动端不可 pin */
+            h1 { font-size: 36px; }           /* Warm Orbit：移动端 H1 缩至 36px */
+            .content { padding-block: 1.5rem; }
+            .outline-list { grid-template-columns: 1fr; }
+            .orbit-b { display: none; }       /* 移动端移除装饰弧 */
+            .slide-watermark { font-size: 3rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 跳过导航 -->
+    <a class="skip-link" href="#main-content">跳到正文</a>
+
+    <!-- 阅读进度条 -->
+    <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
+
+    <!-- ============================================================
+         左侧浮动侧边栏（Warm Orbit：40px 圆角 / 品牌 + 固定按钮 / 搜索 / TOC）
+         ============================================================ -->
+    <aside class="nav-sidebar nav-sidebar-left" id="nav-sidebar" aria-label="文档目录">
+        <div class="nav-header">
+            <div class="nav-brand">
+                <p class="nav-brand-title">企业员工管理系统</p>
+                <p class="nav-brand-sub">EAM · 项目汇报 2026-08</p>
+            </div>
+            <!-- 悬浮时显示 pin 图标；固定后切换为 collapse 图标（规范指定 SVG） -->
+            <button class="sidebar-pin-btn" id="sidebar-pin-btn" title="固定导航" aria-label="固定导航">
+                <svg class="pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6"/><path d="M10 4v4l-3 3v2h10v-2l-3-3V4"/><path d="M12 13v7"/></svg>
+                <svg class="collapse-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 15.25L5.25 9L11.5 2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+        </div>
+
+        <div class="nav-search">
+            <input type="search" id="search-input" placeholder="搜索文档…" aria-label="搜索文档" />
+            <button id="search-prev" class="search-nav-btn" style="display:none" title="上一个（Shift+Enter）" aria-label="上一个匹配">↑</button>
+            <button id="search-next" class="search-nav-btn" style="display:none" title="下一个（Enter）" aria-label="下一个匹配">↓</button>
+            <span class="search-count" id="search-count" aria-live="polite"></span>
+        </div>
+
+        <nav class="toc" aria-label="章节目录">
+            <ul class="toc-list" id="toc-list"><!-- TOC 由 JS 依据 section 标题自动生成 --></ul>
+        </nav>
+    </aside>
+
+    <!-- 透明点击捕获遮罩：悬浮侧栏打开时点击外部关闭 -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- 展开（汉堡）按钮 -->
+    <button class="nav-toggle" id="nav-toggle" title="展开导航" aria-label="展开导航" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+    </button>
+
+    <!-- ============================================================
+         主内容区：长页滚动式幻灯片
+         ============================================================ -->
+    <main class="content" id="main-content">
+        <div class="content-inner">
+
+            <!-- 01 · 封面 -->
+            <section id="cover" class="slide cover-slide">
+                <div class="orbit orbit-a" aria-hidden="true"></div>
+                <div class="orbit orbit-b" aria-hidden="true"></div>
+                <div class="orbit orbit-c" aria-hidden="true"></div>
+                <div class="orbit orbit-d" aria-hidden="true"></div>
+
+                <h2 class="eyebrow" id="cover-kicker" style="margin-bottom:.9rem;">01 · 封面</h2>
+                <h1 id="doc-title">企业员工管理系统 项目汇报</h1>
+                <p class="cover-sub" style="margin-top:1.25rem;font-size:1.25rem;font-weight:500;letter-spacing:-0.02em;"><strong>企业员工管理系统（EAM）</strong></p>
+                <p class="cover-eng" style="margin-top:.25rem;color:var(--text-secondary);letter-spacing:.06em;">Enterprise Employee Management System</p>
+                <div class="cover-meta" style="display:flex;gap:.6rem;margin-top:1.75rem;flex-wrap:wrap;">
+                    <span class="meta-chip" style="padding:.45rem 1rem;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--bg-primary);font-size:var(--text-small);">项目汇报</span>
+                    <span class="meta-chip" style="padding:.45rem 1rem;border:1px solid var(--border);border-radius:var(--radius-pill);background:var(--bg-primary);font-size:var(--text-small);">2026-08</span>
+                </div>
+            </section>
+
+            <!-- 02 · 汇报大纲 -->
+            <section id="outline" class="slide">
+                <div class="slide-watermark" aria-hidden="true">02</div>
+                <header class="section-head">
+                    <p class="eyebrow">Outline</p>
+                    <h2>02 · 汇报大纲</h2>
+                </header>
+                <ol class="outline-list stagger-children">
+                    <li class="outline-item"><span class="outline-num">01</span><span>项目背景与目标</span></li>
+                    <li class="outline-item"><span class="outline-num">02</span><span>系统功能概览</span></li>
+                    <li class="outline-item"><span class="outline-num">03</span><span>技术架构</span></li>
+                    <li class="outline-item"><span class="outline-num">04</span><span>数据库设计</span></li>
+                    <li class="outline-item"><span class="outline-num">05</span><span>关键流程演示</span></li>
+                    <li class="outline-item"><span class="outline-num">06</span><span>项目成果与数据</span></li>
+                    <li class="outline-item"><span class="outline-num">07</span><span>问题修复与质量保障</span></li>
+                    <li class="outline-item"><span class="outline-num">08</span><span>总结与展望</span></li>
+                </ol>
+            </section>
+
+            <!-- 03 · 项目背景 -->
+            <section id="background" class="slide">
+                <div class="slide-watermark" aria-hidden="true">03</div>
+                <header class="section-head">
+                    <p class="eyebrow">Background</p>
+                    <h2>03 · 项目背景</h2>
+                </header>
+
+                <h3 class="lead" id="background-need">为什么需要这套系统？</h3>
+                <ul class="bullet-list stagger-children">
+                    <li class="bullet-card"><span>中小企业人事管理依赖人工，员工档案、考勤、请假、薪资分散低效</span></li>
+                    <li class="bullet-card"><span>请假审批线下流转，审批人不明确、进度不可控</span></li>
+                    <li class="bullet-card"><span>薪资核算人工易错，缺乏全局经营数据视角</span></li>
+                </ul>
+
+                <h3 class="lead" id="background-goal">项目目标</h3>
+                <ul class="bullet-list stagger-children">
+                    <li class="bullet-card"><span>实现人事核心流程线上化、自动化</span></li>
+                    <li class="bullet-card"><span>数据统一管理，业务可追溯</span></li>
+                    <li class="bullet-card"><span>轻量单机部署，开箱即用</span></li>
+                </ul>
+            </section>
+
+            <!-- 04 · 系统功能概览 -->
+            <section id="features" class="slide">
+                <div class="slide-watermark" aria-hidden="true">04</div>
+                <header class="section-head">
+                    <p class="eyebrow">Features</p>
+                    <h2>04 · 系统功能概览</h2>
+                </header>
+                <div class="feature-grid stagger-children">
+                    <article class="feature-card"><h3>登录认证</h3><p>4 种角色（admin / hr / supervisor / employee），Token 鉴权</p></article>
+                    <article class="feature-card"><h3>数据看板</h3><p>员工、部门、待审批、今日考勤等核心指标一屏总览</p></article>
+                    <article class="feature-card"><h3>组织架构</h3><p>部门树、职位（P1-P8）管理</p></article>
+                    <article class="feature-card"><h3>员工管理</h3><p>档案增删改查、搜索筛选、离职办理</p></article>
+                    <article class="feature-card"><h3>考勤管理</h3><p>上下班打卡，自动判定迟到/早退/缺卡</p></article>
+                    <article class="feature-card"><h3>请假管理</h3><p>在线申请，单级审批，实时通知</p></article>
+                    <article class="feature-card"><h3>薪资管理</h3><p>工资项录入，实发自动计算</p></article>
+                </div>
+            </section>
+
+            <!-- 05 · 技术架构 -->
+            <section id="architecture" class="slide">
+                <div class="slide-watermark" aria-hidden="true">05</div>
+                <header class="section-head">
+                    <p class="eyebrow">Architecture</p>
+                    <h2>05 · 技术架构</h2>
+                </header>
+                <div class="arch-grid stagger-children">
+                    <div class="arch-row">
+                        <h3>后端</h3>
+                        <ul class="chip-list">
+                            <li>Java 17</li><li>Spring Boot 2.7</li><li>MyBatis-Plus</li><li>Sa-Token</li><li>WebSocket</li><li>Knife4j</li>
+                        </ul>
+                    </div>
+                    <div class="arch-row">
+                        <h3>前端</h3>
+                        <ul class="chip-list">
+                            <li>Vue 3</li><li>Vite 6</li><li>Ant Design Vue 4</li><li>Pinia</li><li>TypeScript</li>
+                        </ul>
+                    </div>
+                    <div class="arch-row">
+                        <h3>数据库</h3>
+                        <ul class="chip-list">
+                            <li>MySQL 8.0</li><li>InnoDB</li><li>utf8mb4</li>
+                        </ul>
+                    </div>
+                    <div class="arch-row">
+                        <h3>架构风格</h3>
+                        <ul class="chip-list">
+                            <li>前后端分离</li><li>简化 DDD 分层</li>
+                        </ul>
+                    </div>
+                </div>
+                <ul class="bullet-list stagger-children">
+                    <li class="bullet-card"><span>领域层纯业务实体，不依赖框架</span></li>
+                    <li class="bullet-card"><span>仓储接口定义于领域层，实现在基础设施层</span></li>
+                    <li class="bullet-card"><span>无外键设计，逻辑删除，业务层校验关联</span></li>
+                </ul>
+            </section>
+
+            <!-- 06 · 数据库设计 -->
+            <section id="database" class="slide">
+                <div class="slide-watermark" aria-hidden="true">06</div>
+                <header class="section-head">
+                    <p class="eyebrow">Database</p>
+                    <h2>06 · 数据库设计</h2>
+                </header>
+
+                <h3 class="lead" id="db-tables">9 张业务表</h3>
+                <ul class="chip-list" style="margin-bottom:1.5rem;">
+                    <li>dept</li><li>position</li><li>employee</li><li>sys_user</li><li>attendance_rule</li><li>attendance_record</li><li>leave_application</li><li>salary</li><li>attendance_monthly_stat</li>
+                </ul>
+
+                <h3 class="lead" id="db-points">设计要点</h3>
+                <ul class="bullet-list stagger-children">
+                    <li class="bullet-card"><span>无外键，关联在业务层校验</span></li>
+                    <li class="bullet-card"><span>逻辑删除（deleted 字段），核心数据不物理删除</span></li>
+                    <li class="bullet-card">
+                        <span>关键唯一索引保障数据一致性</span>
+                        <ul class="sub-list">
+                            <li>工号唯一</li>
+                            <li>打卡 (employee_id, date) 唯一</li>
+                            <li>薪资 (employee_id, year, month) 唯一</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 07 · 关键流程演示：请假审批 -->
+            <section id="leave-flow" class="slide">
+                <div class="slide-watermark" aria-hidden="true">07</div>
+                <header class="section-head">
+                    <p class="eyebrow">Key Flow</p>
+                    <h2>07 · 关键流程演示：请假审批</h2>
+                </header>
+
+                <div class="code-block">
+                    <pre><code class="language-flow">员工提交请假
+   ├─ 自动计算请假天数
+   ├─ 自动指派审批人（部门主管）
+   ▼
+审批人收到 WebSocket 通知
+   ├─ 查询待审批列表
+   ├─ 批准 / 拒绝
+   ▼
+状态更新，实时通知申请人</code></pre>
+                </div>
+
+                <p class="flow-summary"><strong>单级审批 · 自动指派 · 全程可追溯</strong></p>
+            </section>
+
+            <!-- 08 · 项目成果 -->
+            <section id="results" class="slide">
+                <div class="slide-watermark" aria-hidden="true">08</div>
+                <header class="section-head">
+                    <p class="eyebrow">Results</p>
+                    <h2>08 · 项目成果</h2>
+                </header>
+
+                <div class="kpi-grid stagger-children">
+                    <article class="kpi-card">
+                        <h3>初始化数据</h3>
+                        <ul class="kpi-stats">
+                            <li><b>4</b><span>部门</span></li>
+                            <li><b>8</b><span>职位</span></li>
+                            <li><b>10</b><span>员工</span></li>
+                            <li><b>10</b><span>账号</span></li>
+                            <li><b>1</b><span>考勤规则</span></li>
+                        </ul>
+                    </article>
+                    <article class="kpi-card">
+                        <h3>接口规模</h3>
+                        <ul class="kpi-stats">
+                            <li><b>8</b><span>大模块</span></li>
+                            <li><b>30+</b><span>REST 接口</span></li>
+                        </ul>
+                    </article>
+                </div>
+
+                <h3 class="lead" id="results-running">运行情况</h3>
+                <div class="table-wrap" tabindex="0">
+                    <table>
+                        <caption>系统组件运行端口与状态</caption>
+                        <thead>
+                            <tr><th scope="col">组件</th><th scope="col">端口</th><th scope="col">状态</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">后端 API</th><td>8080</td><td>✅</td></tr>
+                            <tr><th scope="row">前端页面</th><td>3000</td><td>✅</td></tr>
+                            <tr><th scope="row">接口文档</th><td>8080/doc.html</td><td>✅</td></tr>
+                            <tr><th scope="row">MySQL</th><td>3306</td><td>✅</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 09 · 质量保障：问题修复 -->
+            <section id="quality" class="slide">
+                <div class="slide-watermark" aria-hidden="true">09</div>
+                <header class="section-head">
+                    <p class="eyebrow">Quality</p>
+                    <h2>09 · 质量保障：问题修复</h2>
+                </header>
+                <div class="table-wrap" tabindex="0">
+                    <table>
+                        <caption>典型问题与修复措施</caption>
+                        <thead>
+                            <tr><th scope="col">类别</th><th scope="col">典型问题</th><th scope="col">修复</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">框架兼容</th><td>WebSocket Bean 冲突 / Knife4j javax-jakarta</td><td>修正注册方式与依赖版本</td></tr>
+                            <tr><th scope="row">数据库</th><td>保留字字段 / 编码 / 密码哈希</td><td>反引号、utf8、正确 BCrypt</td></tr>
+                            <tr><th scope="row">逻辑缺陷</th><td>打卡主键冲突 / 登录 ID 类型转换</td><td>update-save 分支、getLoginIdAsLong</td></tr>
+                            <tr><th scope="row">前端</th><td>菜单跳转失效 / 工号不可填</td><td>路由映射修复、表单解锁</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 10 · 总结与展望 -->
+            <section id="summary" class="slide">
+                <div class="slide-watermark" aria-hidden="true">10</div>
+                <header class="section-head">
+                    <p class="eyebrow">Summary</p>
+                    <h2>10 · 总结与展望</h2>
+                </header>
+
+                <h3 class="lead" id="summary-done">已实现</h3>
+                <p class="summary-text" style="margin-bottom:1.5rem;">人事管理核心闭环，多角色协同，单机可部署</p>
+
+                <h3 class="lead" id="summary-next">可扩展方向</h3>
+                <ul class="bullet-list stagger-children">
+                    <li class="bullet-card"><span>接口级角色权限细化</span></li>
+                    <li class="bullet-card"><span>月度考勤统计定时任务</span></li>
+                    <li class="bullet-card"><span>登录安全策略（失败锁定、密码强度）</span></li>
+                    <li class="bullet-card"><span>报表导出、消息通知增强</span></li>
+                </ul>
+
+                <p class="closing"><strong>谢谢观看 · Q&amp;A</strong></p>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="back-to-top" aria-label="返回顶部" title="返回顶部">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+
+    <script>
+        /* ============================================================
+           0. 工具函数
+           ============================================================ */
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        /* ============================================================
+           1. 平滑滚动控制器
+           ============================================================ */
+        class SmoothScrollController {
+            constructor() {
+                this.setupListeners();
+            }
+            scrollToSection(targetId) {
+                const target = document.getElementById(targetId);
+                if (!target) return;
+                const top = target.getBoundingClientRect().top + window.pageYOffset - 24;
+                window.scrollTo({ top, behavior: 'smooth' });
+                history.pushState(null, null, '#' + targetId);
+            }
+            setupListeners() {
+                document.querySelectorAll('.toc-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.scrollToSection(link.getAttribute('href').substring(1));
+                    });
+                });
+            }
+        }
+
+        /* ============================================================
+           2. 当前章节跟踪器（滚动高亮 TOC）
+           ============================================================ */
+        class ActiveSectionTracker {
+            constructor() {
+                this.sections = Array.from(document.querySelectorAll('section[id]'));
+                this.tocLinks = Array.from(document.querySelectorAll('.toc-link'));
+                this.setupObserver();
+            }
+            setupObserver() {
+                const options = { root: null, rootMargin: '-15% 0px -65% 0px', threshold: 0 };
+                this.observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) this.updateActiveTOC(entry.target.id);
+                    });
+                }, options);
+                this.sections.forEach(section => this.observer.observe(section));
+            }
+            updateActiveTOC(sectionId) {
+                this.tocLinks.forEach(link => {
+                    const active = link.getAttribute('href') === '#' + sectionId;
+                    link.classList.toggle('active', active);
+                });
+            }
+        }
+
+        /* ============================================================
+           3. 实时搜索控制器（高亮 + 上一个/下一个跳转）
+           ============================================================ */
+        class SearchController {
+            constructor() {
+                this.searchInput = document.getElementById('search-input');
+                this.searchCount = document.getElementById('search-count');
+                this.prevBtn = document.getElementById('search-prev');
+                this.nextBtn = document.getElementById('search-next');
+                this.sections = Array.from(document.querySelectorAll('section'));
+                this.matches = [];
+                this.currentIndex = -1;
+                this.setupListeners();
+            }
+            escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+            search(query) {
+                this.clearHighlights();
+                this.matches = [];
+                this.currentIndex = -1;
+                if (!query || query.length < 2) { this.updateUI(0); return; }
+                const safe = this.escapeRegex(query);
+                const re = new RegExp('(' + safe + ')', 'gi');
+                this.sections.forEach(section => {
+                    const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
+                    const nodes = [];
+                    let node;
+                    while (node = walker.nextNode()) {
+                        if (node.parentElement.closest('script, style, mark, .copy-btn')) continue;
+                        if (re.test(node.textContent)) nodes.push(node);
+                        re.lastIndex = 0;
+                    }
+                    nodes.forEach(n => {
+                        const span = document.createElement('span');
+                        span.innerHTML = n.textContent.replace(re, '<mark>$1</mark>');
+                        n.parentNode.replaceChild(span, n);
+                    });
+                });
+                this.matches = Array.from(document.querySelectorAll('mark'));
+                this.updateUI(this.matches.length);
+                if (this.matches.length > 0) { this.currentIndex = 0; this.scrollToMatch(0); }
+            }
+            scrollToMatch(index) {
+                this.matches.forEach(m => m.classList.remove('mark-active'));
+                const target = this.matches[index];
+                if (!target) return;
+                target.classList.add('mark-active');
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.updateUI(this.matches.length);
+            }
+            next() {
+                if (!this.matches.length) return;
+                this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+                this.scrollToMatch(this.currentIndex);
+            }
+            prev() {
+                if (!this.matches.length) return;
+                this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+                this.scrollToMatch(this.currentIndex);
+            }
+            updateUI(total) {
+                this.searchCount.textContent = total === 0
+                    ? (this.searchInput.value.length >= 2 ? '无匹配' : '')
+                    : (this.currentIndex + 1) + ' / ' + total;
+                const show = total > 0;
+                if (this.prevBtn) this.prevBtn.style.display = show ? 'inline-flex' : 'none';
+                if (this.nextBtn) this.nextBtn.style.display = show ? 'inline-flex' : 'none';
+            }
+            clearHighlights() {
+                document.querySelectorAll('mark').forEach(mark => mark.replaceWith(mark.textContent));
+                this.sections.forEach(s => s.normalize());
+            }
+            setupListeners() {
+                this.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+                this.searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { this.searchInput.value = ''; this.search(''); }
+                    if (e.key === 'Enter') { e.shiftKey ? this.prev() : this.next(); }
+                });
+                if (this.prevBtn) this.prevBtn.addEventListener('click', () => this.prev());
+                if (this.nextBtn) this.nextBtn.addEventListener('click', () => this.next());
+            }
+        }
+
+        /* ============================================================
+           4. 侧边栏控制器（pin / unpin + 移动端覆盖层）
+           ============================================================ */
+        class SidebarController {
+            constructor() {
+                this.sidebar = document.getElementById('nav-sidebar');
+                this.pinBtn = document.getElementById('sidebar-pin-btn');
+                this.toggle = document.getElementById('nav-toggle');
+                this.overlay = document.getElementById('sidebar-overlay');
+                this.isMobile = () => window.innerWidth <= 768;
+                const saved = localStorage.getItem('sidebar-pinned');
+                const pinned = this.isMobile() ? false : (saved === null ? true : saved === 'true');
+                this.setPinned(pinned, false);
+                this.setupListeners();
+            }
+            setPinned(pinned, animate = true) {
+                if (!animate) this.sidebar.style.transition = 'none';
+                document.body.classList.remove('sidebar-pinned-left', 'sidebar-pinned-right');
+                if (pinned) {
+                    this.sidebar.classList.add('pinned');
+                    this.sidebar.classList.remove('open');
+                    document.body.classList.add('sidebar-pinned-left');
+                    this.overlay.classList.remove('visible');
+                } else {
+                    this.sidebar.classList.remove('pinned');
+                    this.close();
+                }
+                this.syncPinButton(pinned);
+                localStorage.setItem('sidebar-pinned', pinned);
+                if (!animate) requestAnimationFrame(() => { this.sidebar.style.transition = ''; });
+            }
+            syncPinButton(pinned) {
+                if (!this.pinBtn) return;
+                const label = pinned ? '收起导航' : '固定导航';
+                this.pinBtn.title = label;
+                this.pinBtn.setAttribute('aria-label', label);
+            }
+            open() {
+                this.sidebar.classList.add('open');
+                this.overlay.classList.add('visible');
+                this.toggle.setAttribute('aria-expanded', 'true');
+            }
+            close() {
+                this.sidebar.classList.remove('open');
+                this.overlay.classList.remove('visible');
+                this.toggle.setAttribute('aria-expanded', 'false');
+            }
+            setupListeners() {
+                this.pinBtn.addEventListener('click', () => {
+                    this.setPinned(!this.sidebar.classList.contains('pinned'));
+                });
+                this.toggle.addEventListener('click', () => {
+                    this.sidebar.classList.contains('open') ? this.close() : this.open();
+                });
+                this.overlay.addEventListener('click', () => this.close());
+                window.addEventListener('resize', () => {
+                    if (this.isMobile()) this.setPinned(false);
+                }, { passive: true });
+            }
+        }
+
+        /* ============================================================
+           5. 返回顶部按钮
+           ============================================================ */
+        class BackToTop {
+            constructor() {
+                this.btn = document.getElementById('back-to-top');
+                if (!this.btn) return;
+                this.threshold = window.innerHeight;
+                this.setupListeners();
+            }
+            setupListeners() {
+                window.addEventListener('scroll', () => {
+                    this.btn.classList.toggle('visible', window.scrollY > this.threshold);
+                }, { passive: true });
+                this.btn.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
+        /* ============================================================
+           6. 阅读进度条
+           ============================================================ */
+        class ReadingProgress {
+            constructor() {
+                this.bar = document.getElementById('reading-progress');
+                window.addEventListener('scroll', () => {
+                    const docH = document.documentElement.scrollHeight - window.innerHeight;
+                    const p = docH > 0 ? (window.scrollY / docH) * 100 : 0;
+                    this.bar.style.width = p + '%';
+                }, { passive: true });
+            }
+        }
+
+        /* ============================================================
+           7. 代码语法高亮 + 复制按钮
+           ============================================================ */
+        function highlightCode() {
+            document.querySelectorAll('pre code').forEach(block => {
+                const language = (block.className || '').replace('language-', '').trim();
+                const code = block.textContent;
+                let out;
+                if (language === 'flow') {
+                    // 请假审批流程图：连接符/箭头 → 轨道橙；技术名词 → 主强调
+                    out = escapeHtml(code);
+                    out = out.replace(/([├└┌┐┘─│▼▲])/g, '<span class="tok-flow">$1</span>');
+                    out = out.replace(/(WebSocket|REST|API|MySQL|Java|Spring Boot)/g, '<span class="tok-tech">$1</span>');
+                } else {
+                    // 通用高亮：注释 / 字符串 / 关键字
+                    out = escapeHtml(code);
+                    out = out.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)/g, '<span class="comment">$1</span>');
+                    out = out.replace(/(["'`])(?:(?=(\\?))\2.)*?\1/g, '<span class="string">$&</span>');
+                    out = out.replace(/\b(function|const|let|var|return|if|else|for|while|def|class|import|from)\b/g, '<span class="keyword">$1</span>');
+                }
+                block.innerHTML = out;
+
+                // 复制到剪贴板（微交互）
+                const wrap = block.closest('.code-block');
+                if (wrap) {
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-btn';
+                    btn.textContent = '复制';
+                    btn.setAttribute('aria-label', '复制代码');
+                    wrap.appendChild(btn);
+                    btn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(code).then(() => {
+                            btn.textContent = '已复制';
+                            btn.classList.add('copied');
+                            setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 2000);
+                        });
+                    });
+                }
+            });
+        }
+
+        /* ============================================================
+           8. 滚动显现动画（Intersection Observer）
+           ============================================================ */
+        function initReveal() {
+            if (!document.documentElement.classList.contains('js')) return;
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const els = document.querySelectorAll('.slide, .stagger-children');
+            if (reduce) {
+                els.forEach(el => el.classList.add('visible'));
+                return;
+            }
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+            els.forEach(el => observer.observe(el));
+        }
+
+        /* ============================================================
+           9. TOC 自动生成
+           ============================================================ */
+        function buildTOC() {
+            const list = document.getElementById('toc-list');
+            if (!list) return;
+            document.querySelectorAll('section[id]').forEach(section => {
+                const heading = section.querySelector('h1, h2');
+                if (!heading) return;
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.className = 'toc-link';
+                a.href = '#' + section.id;
+                a.textContent = heading.textContent;
+                li.appendChild(a);
+                list.appendChild(li);
+            });
+        }
+
+        /* ============================================================
+           10. 初始化
+           ============================================================ */
+        document.addEventListener('DOMContentLoaded', () => {
+            buildTOC();
+            highlightCode();
+            new SmoothScrollController();
+            new ActiveSectionTracker();
+            new SearchController();
+            new SidebarController();
+            new BackToTop();
+            new ReadingProgress();
+            initReveal();
+        });
+    </script>
+</body>
+</html>

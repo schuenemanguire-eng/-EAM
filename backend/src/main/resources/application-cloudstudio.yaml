@@ -1,0 +1,12 @@
+# ============================================================
+# CloudStudio 专用配置（profile=cloudstudio）
+# 由 start-backend.sh 以 -Dspring-boot.run.profiles=cloudstudio 激活
+# 覆盖 application.yaml 中的数据库配置，适配 sidecar MySQL（密码 123456）
+# 本地开发不受影响（本地不激活此 profile，仍用 application.yaml 的 root/root）
+# ============================================================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/eam_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456

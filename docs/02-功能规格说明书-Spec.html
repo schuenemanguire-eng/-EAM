@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>功能规格说明书（Spec）· 企业员工管理系统（EAM）</title>
+
+<!-- 字体：IBM Plex Sans / IBM Plex Mono（Google Fonts —— 本页唯一外部依赖） -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+
+<style>
+/* ==========================================================================
+   功能规格说明书（Spec）— 企业员工管理系统（EAM）
+   样式预设：1 — Restrained Grid（克制网格，Carbon 风格企业基调）
+   契约要点：浅色 #f4f4f4 画布 / #ffffff 表面 / 蓝 #0f62fe；深色 #161616 / #262626 / #78a9ff；
+             全部 0px 圆角；表格仅水平分隔线；仅字重 300/400/500；
+             H1 恰 24px/500/1.25 且用 accent；H2 18px/300；正文最低 13px。
+   ========================================================================== */
+
+/* ---------------------------------------------------------------
+   1. CSS 自定义属性（主题令牌）
+   --------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* 全局阅读宽度契约 —— 系统常量，任何预设都不得覆盖 */
+  --content-max-width: 1220px;      /* 内容壳最大宽度 */
+  --content-gutter: 32px;           /* 内容壳左右最小留白 */
+  --chart-text-size: 13px;          /* 全局图表文字固定字号（本页无图表，保留令牌） */
+
+  /* 布局 */
+  --sidebar-width: 280px;
+  --spacing: 1rem;
+
+  /* 配色 —— Restrained Grid 亮色 */
+  --bg-primary:    #f4f4f4; /* 页面画布 */
+  --bg-surface:    #ffffff; /* 卡片 / 面板 / 表格 / 导航表面 */
+  --bg-subtle:     #e8e8e8; /* 次要表面（次级导航、行悬停） */
+  --text-primary:  #161616; /* 主文本 */
+  --text-secondary:#525252; /* 次级文本 */
+  --text-subtle:   #8d8d8d; /* 弱化文本 */
+  --border:        #d6d6d6; /* 1px 细线规则 */
+  --accent:        #0f62fe; /* 唯一强调蓝 */
+  --accent-hover:  #0043ce;
+  --footer-bg:     #161616; /* 深色页脚 */
+  --footer-text:   #f4f4f4;
+  --code-bg:       #ffffff;
+
+  /* 字体 */
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-body:    'IBM Plex Sans', sans-serif;
+  --font-code:    'IBM Plex Mono', monospace;
+  --font-numeric: 'IBM Plex Sans', sans-serif;
+
+  /* 几何与排版契约 */
+  --radius-card:  0;                  /* 全部 0px 圆角 */
+  --text-title-max: 1.5rem;           /* 24px —— 仅 H1 允许 */
+  --text-content-max: 1.4375rem;      /* 23px —— 除 H1 外任何元素的上限 */
+  --text-kpi:     1.25rem;            /* 20px */
+  --text-body:    0.8125rem;          /* 13px —— 绝对最小值 */
+  --text-small:   0.8125rem;
+  --text-mono-label: 0.8125rem;
+  --lh-body:      1.45;
+  --lh-heading:   1.25;
+
+  /* 代码语法高亮令牌色（Carbon 风格克制配色） */
+  --tok-comment:  #8d8d8d;
+  --tok-keyword:  #0043ce;
+  --tok-string:   #0f9d58;
+  --tok-number:   #8a3ffc;
+  --tok-literal:  #a2191f;
+  --tok-url:      #0f62fe;
+}
+
+/* 深色主题 —— 由 html[data-theme="dark"] 驱动（禁止用 filter 反转合成暗色） */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary:    #161616;
+  --bg-surface:    #262626;
+  --bg-subtle:     #393939;
+  --text-primary:  #f4f4f4;
+  --text-secondary:#c6c6c6;
+  --text-subtle:   #a8a8a8;
+  --border:        #525252;
+  --accent:        #78a9ff;
+  --accent-hover:  #a6c8ff;
+  --footer-bg:     #262626;
+  --footer-text:   #f4f4f4;
+  --code-bg:       #262626;
+
+  --tok-comment:  #a8a8a8;
+  --tok-keyword:  #78a9ff;
+  --tok-string:   #6fdc8c;
+  --tok-number:   #be95ff;
+  --tok-literal:  #ff8389;
+  --tok-url:      #78a9ff;
+}
+
+/* ---------------------------------------------------------------
+   2. 基础 / 重置
+   --------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+/* 契约：全部 0px 圆角 —— Restrained Grid 不允许圆角 / 药丸形状 */
+:where(button, input, table, th, td, pre, code, .callout, .nav-sidebar,
+       .nav-toggle, .sidebar-pin-btn, .back-to-top, .theme-toggle, .search-nav-btn) {
+  border-radius: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: var(--text-body);          /* 13px */
+  font-weight: 400;
+  line-height: var(--lh-body);
+  letter-spacing: 0.16px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* 跳转主内容（无障碍） */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 2000;
+  background: var(--accent); color: #fff;
+  padding: 8px 12px; font-size: 13px;
+}
+.skip-link:focus { left: 0; }
+
+::selection { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* 焦点可见样式（无障碍） */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+a { color: var(--accent); text-decoration: none; }
+
+/* ---------------------------------------------------------------
+   3. 排版契约（H1 恰 24px/500/1.25 accent；H2 18px/300；正文 ≥13px）
+   --------------------------------------------------------------- */
+h1, h2, h3, h4 {
+  font-family: var(--font-display), 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  margin: 0;
+}
+
+/* H1 —— 唯一允许 24px 的元素，accent 色 */
+h1 {
+  font-size: var(--text-title-max);   /* 24px */
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--accent);
+}
+/* H2 —— 18px / 300 / 1.3 */
+h2 { font-size: 1.125rem; font-weight: 300; line-height: 1.3; }
+/* H3 —— 15px / 400 / 1.35 */
+h3 { font-size: 0.9375rem; font-weight: 400; line-height: 1.35; }
+/* H4 —— 表格标题等次级结构，13px / 500（≤23px 契约） */
+h4 { font-size: 0.8125rem; font-weight: 500; line-height: 1.35; }
+
+p { margin: 0 0 0.75rem; }
+ul { margin: 0; padding-left: 1.25rem; }
+li { margin-bottom: 0.35rem; }
+
+/* 行内代码（正文 / 表格中） */
+p code, li code, td code, th code, h4 code, .callout code {
+  font-family: var(--font-code), monospace;
+  font-size: 0.8125rem;               /* 13px —— 不低于最小值 */
+  background: var(--bg-subtle);
+  padding: 0.1em 0.3em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------
+   4. 布局 —— 全局 1220px 内容壳，两侧 ≥32px 留白
+   --------------------------------------------------------------- */
+.content { padding-block: 3rem; transition: margin 0.3s cubic-bezier(0.4,0,0.2,1); }
+.content-inner {
+  width: min(calc(100% - var(--content-gutter) - var(--content-gutter)), var(--content-max-width));
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+}
+
+/* ---------------------------------------------------------------
+   5. 侧边栏导航（固定 left + 可固定 / 浮动）
+   --------------------------------------------------------------- */
+.nav-sidebar {
+  position: fixed; top: 0; left: 0;
+  width: var(--sidebar-width); height: 100vh;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);   /* 用 1px 规则代替阴影，保持克制的无阴影风格 */
+  overflow-y: auto; overflow-x: hidden;
+  padding: 1.5rem 1rem;
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+/* 固定态 —— 始终可见，内容右移 */
+.nav-sidebar.pinned { transform: translateX(0); }
+body.sidebar-pinned-left .content { margin-left: var(--sidebar-width); }
+/* 浮动态 —— 默认滑出屏幕，点击 .open 时覆盖内容 */
+.nav-sidebar:not(.pinned) { transform: translateX(-100%); }
+.nav-sidebar:not(.pinned).open { transform: translateX(0); }
+
+/* 侧边栏头部：标题 + 固定/收起按钮 */
+.nav-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 1rem;
+}
+.nav-title { display: block; font-size: 0.9375rem; font-weight: 500; color: var(--text-primary); }
+.nav-sub { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--text-secondary); margin-top: 2px; }
+
+/* 固定按钮：浮动时显示 pin 图标；固定后显示 collapse 图标（32px 触达） */
+.sidebar-pin-btn {
+  flex-shrink: 0; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border); color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.sidebar-pin-btn:hover { color: var(--accent); border-color: var(--accent); }
+.sidebar-pin-btn svg { width: 18px; height: 18px; }
+.sidebar-pin-btn .collapse-icon { display: none; }
+.nav-sidebar.pinned .sidebar-pin-btn .pin-icon { display: none; }
+.nav-sidebar.pinned .sidebar-pin-btn .collapse-icon { display: block; }
+
+/* 透明点击捕获层 —— 浮动侧边栏打开时点击外部关闭，不遮挡阅读 */
+.sidebar-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: transparent;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sidebar-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* ---------------------------------------------------------------
+   6. 实时搜索
+   --------------------------------------------------------------- */
+.nav-search { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 1rem; }
+#search-input {
+  flex: 1; min-width: 0; height: 32px;
+  padding: 0 0.5rem;
+  font-family: var(--font-body); font-size: 13px; color: var(--text-primary);
+  background: var(--bg-primary); border: 1px solid var(--border);
+}
+#search-input::placeholder { color: var(--text-subtle); }
+.search-nav-btn {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  transition: color 0.2s, border-color 0.2s;
+}
+.search-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.search-count { font-size: 13px; color: var(--text-subtle); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* 搜索命中高亮：普通命中用浅色底，当前命中用 accent 实底 */
+mark { background: color-mix(in srgb, var(--accent) 30%, transparent); color: var(--text-primary); padding: 0 2px; }
+mark.mark-active { background: var(--accent); color: #fff; outline: 2px solid var(--accent); }
+
+/* ---------------------------------------------------------------
+   7. 目录（TOC）—— 自动生成 + 滚动高亮
+   --------------------------------------------------------------- */
+.toc { font-size: 13px; }
+.toc-list { list-style: none; margin: 0; padding: 0; }
+.toc-item { margin: 0; }
+.toc-link {
+  display: flex; align-items: center; min-height: 32px;
+  padding: 6px 8px; color: var(--text-secondary); text-decoration: none;
+  border-left: 2px solid transparent;      /* active 态以 2px accent 竖线标记 */
+  transition: color 0.2s, background-color 0.2s, padding-left 0.2s;
+}
+.toc-link:hover { color: var(--text-primary); background: var(--bg-subtle); }
+.toc-link.active {
+  color: var(--text-primary); background: var(--bg-subtle);
+  border-left-color: var(--accent); padding-left: 6px;
+}
+.toc-sublist { list-style: none; margin: 0 0 0 0.5rem; padding: 0; }
+.toc-item-sub .toc-link { min-height: 28px; padding: 4px 8px 4px 12px; font-weight: 400; }
+
+/* ---------------------------------------------------------------
+   8. 主题切换按钮（32px，指针设备；触屏 44px）
+   --------------------------------------------------------------- */
+.theme-toggle {
+  position: fixed; top: 0.75rem; right: 0.75rem; z-index: 998;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: 18px; height: 18px; }
+/* 浅色生效 → 显示月亮（点击切深色）；深色生效 → 显示太阳（点击切浅色） */
+.theme-toggle:not(.is-dark) .icon-sun { display: none; }
+.theme-toggle.is-dark .icon-moon { display: none; }
+
+/* ---------------------------------------------------------------
+   9. 展开侧边栏按钮（汉堡）—— 固定/展开时隐藏
+   --------------------------------------------------------------- */
+.nav-toggle {
+  position: fixed; top: 0.75rem; left: 0.75rem; z-index: 998;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-surface); border: 1px solid var(--border); color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.nav-toggle svg { width: 20px; height: 20px; }
+.nav-toggle:hover { color: var(--accent); border-color: var(--accent); }
+body.sidebar-pinned-left .nav-toggle { display: none; }
+
+/* ---------------------------------------------------------------
+   10. 内容区块与组件
+   --------------------------------------------------------------- */
+/* 顶层章节 —— 用 1px 规则 + 24px 垂直留白分隔（不以大面积空白分隔） */
+.doc-section { padding-block: 24px; border-top: 1px solid var(--border); }
+.doc-section > h2 { margin-bottom: 1rem; }
+.doc-subsection { margin-top: 1.25rem; }
+.doc-subsection > h3 { margin-bottom: 0.75rem; }
+
+/* 报告头部：眉标 + H1 + 摘要 */
+.report-header { padding-block: 24px 8px; }
+.report-eyebrow {
+  margin: 0 0 0.5rem; font-size: 13px; font-weight: 400; color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.report-deck { margin: 0.75rem 0 0; font-size: 14px; font-weight: 300; color: var(--text-secondary); }
+
+/* 提示块 —— 完整四周 1px 边框（禁止单侧条纹），0 圆角 */
+.callout {
+  display: flex; gap: 0.75rem; padding: 12px 16px;
+  border: 1px solid var(--border); background: var(--bg-surface);
+  margin: 0.75rem 0; font-size: 13px; line-height: 1.5;
+}
+.callout strong { font-weight: 500; }
+
+/* 表格 —— 仅水平分隔线（border-bottom），无左/右边框、无列分隔线 */
+.table-wrap { background: var(--bg-surface); overflow-x: auto; margin: 0.75rem 0; }
+table { width: 100%; border-collapse: collapse; border-block: 1px solid var(--border); }
+thead th {
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  background: var(--bg-primary); white-space: nowrap;
+}
+td {
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 400; vertical-align: top;
+}
+tbody tr:last-child td { border-bottom: 0; }
+/* 微交互：行悬停 */
+tbody tr { transition: background-color 0.15s ease; }
+tbody tr:hover { background: var(--bg-subtle); }
+/* 表格内行内代码去掉背景盒，保持水平线纯净 */
+td code, th code { border: 0; background: transparent; padding: 0; white-space: normal; }
+
+/* 表格标题（如 dept（部门）） */
+.table-caption { margin: 1.25rem 0 0.25rem; color: var(--text-primary); }
+
+/* ---------------------------------------------------------------
+   11. 代码块（ASCII 架构图 / JSON / Bash）
+   --------------------------------------------------------------- */
+pre {
+  margin: 0.75rem 0; padding: 16px;
+  background: var(--code-bg); border: 1px solid var(--border);
+  overflow-x: auto; font-size: 13px; line-height: 1.5;
+  font-family: var(--font-code), monospace;
+  white-space: pre;                     /* 保留空白，超宽横向滚动 */
+}
+pre code { background: transparent; border: 0; padding: 0; font-size: 13px; line-height: 1.5; }
+
+/* 语法高亮令牌色（从主题变量读取，随亮暗主题切换） */
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-keyword { color: var(--tok-keyword); font-weight: 500; }
+.tok-string  { color: var(--tok-string); }
+.tok-number  { color: var(--tok-number); }
+.tok-literal { color: var(--tok-literal); }
+.tok-key     { color: var(--tok-keyword); }
+.tok-url     { color: var(--tok-url); }
+
+/* ---------------------------------------------------------------
+   12. 页脚
+   --------------------------------------------------------------- */
+.doc-footer {
+  margin-top: 2rem; padding: 16px 0;
+  background: var(--footer-bg); color: var(--footer-text);
+  font-size: 13px;
+}
+.doc-footer p { margin: 0; }
+
+/* ---------------------------------------------------------------
+   13. 阅读进度条（微交互）
+   --------------------------------------------------------------- */
+.reading-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+  background: var(--accent); z-index: 9999;
+  transition: width 0.1s linear;
+}
+
+/* ---------------------------------------------------------------
+   14. 返回顶部按钮（出现时上滑淡入，悬停上移）
+   --------------------------------------------------------------- */
+.back-to-top {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 900;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; border: none; cursor: pointer;
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.2s;
+}
+.back-to-top:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.back-to-top svg { width: 18px; height: 18px; }
+
+/* ---------------------------------------------------------------
+   15. 滚动显现动画（仅 .js 启用时生效；section 进入视口时淡入上移）
+   --------------------------------------------------------------- */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.js .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ---------------------------------------------------------------
+   16. 响应式
+   --------------------------------------------------------------- */
+/* 平板 768–1024px：侧边栏收紧，内容留白减少 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .content { padding-block: 2rem; }
+  .nav-sidebar { width: 240px; }
+}
+
+/* 移动 <768px：侧边栏始终浮动覆盖，固定按钮隐藏，触屏 44px 目标 */
+@media (max-width: 768px) {
+  .nav-sidebar { width: min(84vw, 320px); transform: translateX(-100%); }
+  .nav-sidebar.open { transform: translateX(0); }
+  body.sidebar-pinned-left .content { margin-left: 0; }
+  .content { padding-block: 1.5rem; }
+  .nav-toggle { display: flex !important; }
+  .sidebar-pin-btn { display: none; }              /* 移动端禁用固定 */
+  .theme-toggle, .nav-toggle, #search-input, .search-nav-btn { height: 44px; }  /* 触屏 44px 目标 */
+  .theme-toggle { width: 44px; }
+  .nav-toggle { width: 44px; }
+}
+
+/* ---------------------------------------------------------------
+   17. 无障碍：减少动效
+   --------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+
+<!-- 主题初始化：在任何绘制前读取 localStorage / prefers-color-scheme，
+     在 <html> 上设置 data-theme，避免主题闪烁（FOUC） -->
+<script>
+(function () {
+  document.documentElement.classList.add('js');
+  try {
+    var saved = localStorage.getItem('theme');
+    var theme = saved ||
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+
+<!-- 无障碍：跳转主内容 -->
+<a class="skip-link" href="#main-content">跳转到主要内容</a>
+
+<!-- 阅读进度条 -->
+<div class="reading-progress" id="reading-progress"></div>
+
+<!-- ======================= 侧边栏导航 ======================= -->
+<aside class="nav-sidebar nav-sidebar-left" id="nav-sidebar">
+  <div class="nav-header">
+    <div class="nav-brand">
+      <span class="nav-title">功能规格说明书</span>
+      <span class="nav-sub">企业员工管理系统（EAM）· v1.0.0</span>
+    </div>
+    <!-- 固定按钮：浮动时显示 pin，固定后显示 collapse（规范指定 SVG） -->
+    <button class="sidebar-pin-btn" id="sidebar-pin-btn" title="固定导航" aria-label="固定导航">
+      <svg class="pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6"/><path d="M10 4v4l-3 3v2h10v-2l-3-3V4"/><path d="M12 13v7"/></svg>
+      <svg class="collapse-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 15.25L5.25 9L11.5 2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </button>
+  </div>
+
+  <!-- 实时搜索 -->
+  <div class="nav-search">
+    <input type="search" id="search-input" placeholder="搜索文档…" aria-label="搜索文档" autocomplete="off">
+    <button id="search-prev" class="search-nav-btn" style="display:none" title="上一个匹配（Shift+Enter）" aria-label="上一个匹配">↑</button>
+    <button id="search-next" class="search-nav-btn" style="display:none" title="下一个匹配（Enter）" aria-label="下一个匹配">↓</button>
+    <span class="search-count" id="search-count" aria-live="polite"></span>
+  </div>
+
+  <!-- 目录（由 JS 依据 H2/H3 自动生成） -->
+  <nav class="toc" aria-label="目录">
+    <ul class="toc-list" id="toc-list"></ul>
+  </nav>
+</aside>
+
+<!-- 透明点击捕获层：浮动侧边栏打开时点击外部关闭 -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- 展开侧边栏按钮（汉堡，规范指定 expand SVG） -->
+<button class="nav-toggle" id="nav-toggle" title="展开导航" aria-label="展开导航">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+</button>
+
+<!-- 主题切换按钮（32px；深色生效显示太阳、浅色生效显示月亮） -->
+<button class="theme-toggle" id="theme-toggle" title="切换到深色模式" aria-label="切换到深色模式">
+  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5"/><path d="M12 19.5V22"/><path d="M2 12h2.5"/><path d="M19.5 12H22"/><path d="M4.9 4.9l1.8 1.8"/><path d="M17.3 17.3l1.8 1.8"/><path d="M19.1 4.9l-1.8 1.8"/><path d="M6.7 17.3l-1.8 1.8"/></svg>
+  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.7 6.7 0 0 0 9.8 9.8z"/></svg>
+</button>
+
+<!-- ======================= 主内容 ======================= -->
+<main class="content" id="main-content">
+  <div class="content-inner">
+    <article class="data-report" aria-labelledby="spec-title">
+
+      <!-- 报告头部 -->
+      <header class="report-header">
+        <p class="report-eyebrow">企业员工管理系统（EAM）· 版本 1.0.0</p>
+        <h1 id="spec-title">功能规格说明书（Spec）</h1>
+        <p class="report-deck">本文档从架构设计、数据库设计、API 接口设计、代码审查四个方面对系统进行完整规格描述。</p>
+      </header>
+
+      <!-- ============ 1. 架构设计 ============ -->
+      <section id="architecture" class="doc-section reveal">
+        <h2>1. 架构设计</h2>
+
+        <!-- 1.1 总体架构 -->
+        <section id="architecture-overview" class="doc-subsection reveal">
+          <h3>1.1 总体架构</h3>
+          <p>系统采用 <strong>前后端分离 + 简化 DDD 分层</strong> 的架构：</p>
+<pre class="ascii-diagram"><code>┌─────────────────────────── 浏览器 ───────────────────────────┐
+│  Vue3 + Vite + Ant Design Vue + Pinia + TypeScript (SPA)     │
+│  页面：登录/看板/部门/职位/员工/考勤/请假/薪资                 │
+└──────────────┬────────────────────────────────────────────────┘
+               │ HTTP (axios)  /api/*    代理 :3000 → :8080
+┌──────────────▼────────────────────────────────────────────────┐
+│ Spring Boot 后端 (8080)                                        │
+│  api.controller  ──►  application.service  ──►  domain.service │
+│        │                    │                    │             │
+│        │                    │              domain.entity       │
+│        │                    │              domain.repository(接口)│
+│        └──────────┬─────────┴──────────────┬─────────┘          │
+│               infrastructure (实现)                             │
+│          persistence.po / mapper / repositoryImpl               │
+│          config (Sa-Token / WebSocket / Async)                  │
+└──────────────┬────────────────────────────────────────────────┘
+               │ JDBC (MyBatis-Plus)
+        ┌──────▼──────┐
+        │ MySQL 8.0   │  eam_db  (utf8mb4 / InnoDB / 无外键)
+        └─────────────┘</code></pre>
+        </section>
+
+        <!-- 1.2 分层职责 -->
+        <section id="architecture-layers" class="doc-subsection reveal">
+          <h3>1.2 分层职责</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">层</th><th scope="col">包路径</th><th scope="col">职责</th><th scope="col">依赖</th></tr></thead>
+              <tbody>
+                <tr><td>接口层</td><td><code>com.company.eam.api</code></td><td>REST 控制器、请求/响应 DTO</td><td>application</td></tr>
+                <tr><td>应用层</td><td><code>com.company.eam.application</code></td><td>业务用例编排、事务、鉴权获取</td><td>domain</td></tr>
+                <tr><td>领域层</td><td><code>com.company.eam.domain</code></td><td>纯业务实体、领域服务、仓储接口、枚举</td><td>无 MyBatis/MySQL</td></tr>
+                <tr><td>基础设施层</td><td><code>com.company.eam.infrastructure</code></td><td>数据库 PO、Mapper、仓储实现、框架配置</td><td>domain</td></tr>
+                <tr><td>通用层</td><td><code>com.company.eam.common</code></td><td>统一响应、全局异常、工具类</td><td>-</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout">
+            <div><strong>DDD 约束：</strong><code>domain.entity</code> 为纯业务实体，不使用 MyBatis 注解、不依赖数据库；<code>domain.repository</code> 定义仓储接口，实现在 <code>infrastructure.repository</code>，实现类内部将业务实体与 PO 相互转换。</div>
+          </div>
+        </section>
+
+        <!-- 1.3 核心组件 -->
+        <section id="architecture-components" class="doc-subsection reveal">
+          <h3>1.3 核心组件</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">组件</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>Sa-Token</td><td>登录认证（Token），除白名单外全部接口需登录，配置见 <code>SaTokenConfig</code></td></tr>
+                <tr><td>WebSocket</td><td>请假审批通知（<code>/ws/notifications</code>），内存级会话，<code>WebSocketHandler</code></td></tr>
+                <tr><td>异步任务</td><td><code>@EnableAsync</code> 线程池（<code>AsyncConfig</code>）</td></tr>
+                <tr><td>MyBatis-Plus</td><td>ORM，开启逻辑删除（字段 <code>deleted</code>）、下划线转驼峰</td></tr>
+                <tr><td>Knife4j</td><td>OpenAPI3 接口文档，地址 <code>/doc.html</code></td></tr>
+                <tr><td>全局异常</td><td><code>GlobalExceptionHandler</code> 统一捕获 <code>BusinessException</code> 及系统异常</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 1.4 关键业务流程 -->
+        <section id="architecture-flows" class="doc-subsection reveal">
+          <h3>1.4 关键业务流程</h3>
+          <h4 class="table-caption">请假审批流程（单级审批）</h4>
+<pre class="ascii-diagram"><code>员工提交申请
+   │ 计算请假天数 leaveDomainService.calculateLeaveDays()
+   │ 自动指定审批人 leaveDomainService.getApproverId()（取部门 manager_id）
+   ▼
+申请单保存，状态=待审批，approver_id=部门主管
+   │ WebSocket 通知审批人
+   ▼
+主管查询待审批列表 → 批准/拒绝
+   │ 校验当前登录人 == approver_id
+   ▼
+状态更新（已批准/已拒绝），WebSocket 通知申请人</code></pre>
+          <h4 class="table-caption">打卡流程</h4>
+<pre class="ascii-diagram"><code>员工打卡（IN/OUT）
+   │ 按 (employee_id, date) 查找当日记录
+   ├─ 无记录 → 新增（记录上班/下班时间）
+   └─ 有记录 → 更新（补记下班卡）
+   │ 依据考勤规则阈值判定 状态（正常/迟到/早退/缺卡）
+   ▼
+保存并返回</code></pre>
+        </section>
+
+        <!-- 1.5 前端结构 -->
+        <section id="frontend-structure" class="doc-subsection reveal">
+          <h3>1.5 前端结构</h3>
+<pre class="ascii-diagram"><code>frontend/src
+├── api/index.ts        # API 封装（axios）
+├── stores/user.ts      # Pinia 用户状态
+├── router/index.ts     # Vue Router（hash 模式）
+├── utils/request.ts    # axios 实例（携带 Bearer Token）
+└── views/
+    ├── Login.vue       # 登录
+    ├── layout/Layout.vue
+    ├── dashboard/Dashboard.vue   # 数据看板
+    ├── dept/Dept.vue             # 部门管理
+    ├── position/Position.vue     # 职位管理
+    ├── employee/Employee.vue     # 员工管理
+    ├── attendance/Attendance.vue # 考勤管理
+    ├── leave/Leave.vue           # 请假管理
+    └── salary/Salary.vue         # 薪资管理</code></pre>
+        </section>
+      </section>
+
+      <!-- ============ 2. 数据库设计 ============ -->
+      <section id="database" class="doc-section reveal">
+        <h2>2. 数据库设计</h2>
+
+        <!-- 2.1 设计约定 -->
+        <section id="db-conventions" class="doc-subsection reveal">
+          <h3>2.1 设计约定</h3>
+          <ul>
+            <li>引擎 <code>InnoDB</code>，字符集 <code>utf8mb4</code>。</li>
+            <li><strong>不建立外键</strong>，关联校验全部在业务层实现。</li>
+            <li><strong>逻辑删除</strong>：业务表含 <code>deleted</code> 字段（0 未删 / 1 已删），禁止物理删除核心业务数据。</li>
+            <li>主键自增；<code>create_time</code>/<code>update_time</code> 自动维护。</li>
+          </ul>
+        </section>
+
+        <!-- 2.2 表清单（9 张） -->
+        <section id="db-tables" class="doc-subsection reveal">
+          <h3>2.2 表清单（9 张）</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">#</th><th scope="col">表名</th><th scope="col">说明</th><th scope="col">关键索引</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td><code>dept</code></td><td>部门表（含主管 manager_id）</td><td>主键</td></tr>
+                <tr><td>2</td><td><code>position</code></td><td>职位表（职级 rank P1-P8）</td><td>主键</td></tr>
+                <tr><td>3</td><td><code>employee</code></td><td>员工表</td><td><code>uk_employee_no</code> 工号唯一</td></tr>
+                <tr><td>4</td><td><code>sys_user</code></td><td>用户表（BCrypt 密码、角色）</td><td><code>uk_username</code> 用户名唯一</td></tr>
+                <tr><td>5</td><td><code>attendance_rule</code></td><td>考勤规则表（仅 1 条）</td><td>主键</td></tr>
+                <tr><td>6</td><td><code>attendance_record</code></td><td>打卡记录表</td><td><code>uk_emp_date</code> (employee_id,date) 唯一</td></tr>
+                <tr><td>7</td><td><code>leave_application</code></td><td>请假申请表</td><td><code>idx_emp_status</code> (employee_id,status)</td></tr>
+                <tr><td>8</td><td><code>salary</code></td><td>薪资表</td><td><code>uk_emp_year_month</code> (employee_id,year,month) 唯一</td></tr>
+                <tr><td>9</td><td><code>attendance_monthly_stat</code></td><td>月度考勤统计表</td><td>主键</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 2.3 核心表结构 -->
+        <section id="db-core-tables" class="doc-subsection reveal">
+          <h3>2.3 核心表结构</h3>
+
+          <h4 class="table-caption">dept（部门）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>name</td><td>VARCHAR(100)</td><td>部门名称</td></tr>
+                <tr><td>parent_id</td><td>BIGINT</td><td>父部门 ID，0 表示根</td></tr>
+                <tr><td>manager_id</td><td>BIGINT</td><td>部门主管员工 ID</td></tr>
+                <tr><td>sort</td><td>INT</td><td>排序号</td></tr>
+                <tr><td>status</td><td>TINYINT</td><td>1 启用 0 禁用</td></tr>
+                <tr><td>deleted</td><td>TINYINT</td><td>逻辑删除</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="table-caption">employee（员工）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>name</td><td>VARCHAR(50)</td><td>姓名</td></tr>
+                <tr><td>employee_no</td><td>VARCHAR(32)</td><td>工号（唯一索引）</td></tr>
+                <tr><td>dept_id / position_id</td><td>BIGINT</td><td>部门 / 职位</td></tr>
+                <tr><td>entry_date</td><td>DATE</td><td>入职日期</td></tr>
+                <tr><td>status</td><td>TINYINT</td><td>1 在职 0 离职</td></tr>
+                <tr><td>phone / email</td><td>VARCHAR</td><td>联系方式</td></tr>
+                <tr><td>gender</td><td>TINYINT</td><td>1 男 2 女</td></tr>
+                <tr><td>birthday</td><td>DATE</td><td>出生日期</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="table-caption">sys_user（用户）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>username</td><td>VARCHAR(50)</td><td>登录名（唯一）</td></tr>
+                <tr><td>password</td><td>VARCHAR(200)</td><td>BCrypt 密文</td></tr>
+                <tr><td>employee_id</td><td>BIGINT</td><td>关联员工</td></tr>
+                <tr><td>role</td><td>VARCHAR(20)</td><td>admin/hr/supervisor/employee</td></tr>
+                <tr><td>status</td><td>TINYINT</td><td>1 启用 0 禁用</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="table-caption">attendance_record（打卡记录）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>employee_id</td><td>BIGINT</td><td>员工 ID</td></tr>
+                <tr><td>clock_in_time / clock_out_time</td><td>DATETIME</td><td>上班 / 下班打卡时间</td></tr>
+                <tr><td>status</td><td>VARCHAR(20)</td><td>正常/迟到/早退/缺卡</td></tr>
+                <tr><td>date</td><td>DATE</td><td>考勤日期（与 employee_id 联合唯一）</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="table-caption">leave_application（请假申请）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>employee_id</td><td>BIGINT</td><td>申请人</td></tr>
+                <tr><td>leave_type</td><td>VARCHAR(20)</td><td>年假/病假/事假/婚假</td></tr>
+                <tr><td>start_time / end_time</td><td>DATETIME</td><td>起止时间</td></tr>
+                <tr><td>total_days</td><td>DECIMAL(4,2)</td><td>请假天数（自动计算）</td></tr>
+                <tr><td>status</td><td>VARCHAR(20)</td><td>待审批/已批准/已拒绝</td></tr>
+                <tr><td>approver_id</td><td>BIGINT</td><td>审批人（部门主管）</td></tr>
+                <tr><td>approve_time</td><td>DATETIME</td><td>审批时间</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h4 class="table-caption">salary（薪资）</h4>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">字段</th><th scope="col">类型</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td>id</td><td>BIGINT PK</td><td>主键</td></tr>
+                <tr><td>employee_id</td><td>BIGINT</td><td>员工 ID</td></tr>
+                <tr><td>year / month</td><td>INT</td><td>年月（联合唯一）</td></tr>
+                <tr><td>base_salary / bonus / allowance / deduction</td><td>DECIMAL(10,2)</td><td>基本工资/奖金/津贴/扣款</td></tr>
+                <tr><td>total_salary</td><td>DECIMAL(10,2)</td><td>实发工资（自动计算）</td></tr>
+                <tr><td>pay_date</td><td>DATE</td><td>发放日期</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 2.4 初始化数据 -->
+        <section id="db-init-data" class="doc-subsection reveal">
+          <h3>2.4 初始化数据</h3>
+          <ul>
+            <li>4 个部门（总公司 + 研发部/人事部/市场部），<code>manager_id</code> 指向主管员工。</li>
+            <li>8 个职位（CEO、技术总监、人事主管、市场主管、高级/初级开发、人事专员、市场专员）。</li>
+            <li>10 名员工（EMP001~EMP010）与 10 个登录账号，密码均为 <code>123456</code>（BCrypt 密文）。</li>
+            <li>1 条考勤规则（09:00–18:00，迟到/早退阈值 15 分钟）。</li>
+          </ul>
+        </section>
+      </section>
+
+      <!-- ============ 3. API 接口设计 ============ -->
+      <section id="api" class="doc-section reveal">
+        <h2>3. API 接口设计</h2>
+
+        <div class="callout">
+          <div>统一前缀 <code>/api</code>，除登录外均需请求头 <code>Authorization: Bearer &lt;token&gt;</code>。统一返回结构：</div>
+        </div>
+        <pre><code class="language-json">{ "code": 200, "message": "success", "data": { } }</code></pre>
+
+        <!-- 3.1 认证 Auth -->
+        <section id="api-auth" class="doc-subsection reveal">
+          <h3>3.1 认证 Auth</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th><th scope="col">入参</th></tr></thead>
+              <tbody>
+                <tr><td><code>POST</code></td><td><code>/api/auth/login</code></td><td>登录，返回 token + 用户信息</td><td>username, password</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/auth/currentUser</code></td><td>当前登录用户信息</td><td>-</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/auth/logout</code></td><td>退出登录</td><td>-</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/auth/updateProfile</code></td><td>更新用户资料</td><td>id, username, status</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.2 部门 Dept -->
+        <section id="api-dept" class="doc-subsection reveal">
+          <h3>3.2 部门 Dept</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/dept/tree</code></td><td>部门树（含子部门、主管名）</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/dept/{id}</code></td><td>部门详情</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/dept</code></td><td>新增部门</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/dept</code></td><td>修改部门</td></tr>
+                <tr><td><code>DELETE</code></td><td><code>/api/dept/{id}</code></td><td>删除部门</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.3 职位 Position -->
+        <section id="api-position" class="doc-subsection reveal">
+          <h3>3.3 职位 Position</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/position</code></td><td>职位列表</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/position</code></td><td>新增职位</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/position</code></td><td>修改职位</td></tr>
+                <tr><td><code>DELETE</code></td><td><code>/api/position/{id}</code></td><td>删除职位</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.4 员工 Employee -->
+        <section id="api-employee" class="doc-subsection reveal">
+          <h3>3.4 员工 Employee</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/employee?keyword=&amp;deptId=</code></td><td>员工列表（搜索/筛选）</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/employee/{id}</code></td><td>员工详情</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/employee</code></td><td>新增员工（工号必填且唯一，空则自动生成）</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/employee</code></td><td>修改员工</td></tr>
+                <tr><td><code>DELETE</code></td><td><code>/api/employee/{id}</code></td><td>删除员工（逻辑删除）</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/employee/{id}/quit</code></td><td>办理离职</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.5 考勤 Attendance -->
+        <section id="api-attendance" class="doc-subsection reveal">
+          <h3>3.5 考勤 Attendance</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>POST</code></td><td><code>/api/attendance/clock</code></td><td>打卡（clockType: IN/OUT，date 默认当天）</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/attendance/records?employeeId=&amp;start=&amp;end=</code></td><td>考勤记录查询</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/attendance/today</code></td><td>今日打卡记录</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.6 请假 Leave -->
+        <section id="api-leave" class="doc-subsection reveal">
+          <h3>3.6 请假 Leave</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>POST</code></td><td><code>/api/leave/apply</code></td><td>提交请假申请</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/leave/my</code></td><td>我的请假列表</td></tr>
+                <tr><td><code>GET</code></td><td><code>/api/leave/pending</code></td><td>待我审批的列表</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/leave/approve</code></td><td>审批（id, status: 已批准/已拒绝）</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.7 薪资 Salary -->
+        <section id="api-salary" class="doc-subsection reveal">
+          <h3>3.7 薪资 Salary</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/salary?year=&amp;month=</code></td><td>薪资列表</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/salary</code></td><td>新增薪资（自动算实发）</td></tr>
+                <tr><td><code>PUT</code></td><td><code>/api/salary</code></td><td>修改薪资</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.8 仪表板 Dashboard -->
+        <section id="api-dashboard" class="doc-subsection reveal">
+          <h3>3.8 仪表板 Dashboard</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">方法</th><th scope="col">路径</th><th scope="col">说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/api/dashboard</code></td><td>汇总指标（员工总数/在职/新入职/部门数/待审批/今日打卡/迟到）</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3.9 请求示例 -->
+        <section id="api-request-examples" class="doc-subsection reveal">
+          <h3>3.9 请求示例</h3>
+          <pre><code class="language-bash"># 登录
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"123456"}'
+
+# 携带 Token 访问员工列表
+curl http://localhost:8080/api/employee \
+  -H "Authorization: Bearer &lt;token&gt;"
+
+# 打卡
+curl -X POST http://localhost:8080/api/attendance/clock \
+  -H "Authorization: Bearer &lt;token&gt;" -H "Content-Type: application/json" \
+  -d '{"clockType":"IN"}'</code></pre>
+        </section>
+      </section>
+
+      <!-- ============ 4. 审查报告 ============ -->
+      <section id="review" class="doc-section reveal">
+        <h2>4. 审查报告</h2>
+
+        <!-- 4.1 代码审查结论 -->
+        <section id="review-conclusion" class="doc-subsection reveal">
+          <h3>4.1 代码审查结论</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">维度</th><th scope="col">结论</th></tr></thead>
+              <tbody>
+                <tr><td>架构一致性</td><td>通过。分层清晰，domain 无框架依赖，符合 DDD 约束</td></tr>
+                <tr><td>数据一致性</td><td>通过。逻辑删除 + 唯一索引 + 业务层关联校验</td></tr>
+                <tr><td>安全</td><td>基本通过。BCrypt 存储密码、Token 认证、接口白名单；建议后续补充基于角色的细粒度权限</td></tr>
+                <tr><td>异常处理</td><td>通过。全局异常统一返回，业务异常与系统异常分离</td></tr>
+                <tr><td>可维护性</td><td>通过。命名规范、DTO/实体/VO 分离、注释完整</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4.2 审查中发现并修复的问题 -->
+        <section id="review-fixed" class="doc-subsection reveal">
+          <h3>4.2 审查中发现并修复的问题</h3>
+          <div class="table-wrap" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">#</th><th scope="col">问题</th><th scope="col">根因</th><th scope="col">修复</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>后端启动 Bean 冲突</td><td><code>WebSocketHandler</code> 同时有 <code>@Component</code> 与 <code>@Bean</code> 注册</td><td>移除类上的 <code>@Component</code> 注解</td></tr>
+                <tr><td>2</td><td><code>ClassNotFoundException: jakarta.servlet</code></td><td>Spring Boot 2.7 为 javax，误用 jakarta 版 knife4j</td><td>替换为 <code>knife4j-openapi3-spring-boot-starter</code></td></tr>
+                <tr><td>3</td><td>数据库连接报错</td><td>JDBC URL <code>characterEncoding=utf8mb4</code> 不被支持</td><td>改为 <code>utf8</code>，加 <code>serverTimezone=Asia/Shanghai</code></td></tr>
+                <tr><td>4</td><td>admin 登录失败</td><td>初始密码哈希错误</td><td>重新生成正确的 BCrypt 密文</td></tr>
+                <tr><td>5</td><td>SQL 语法错误</td><td><code>position.rank</code>、<code>attendance_record.date</code> 为 MySQL 保留字</td><td>字段加反引号 <code>@TableField("\`rank\`")</code></td></tr>
+                <tr><td>6</td><td><code>ClassCastException: String→Long</code></td><td><code>StpUtil.getLoginId()</code> 返回 String</td><td>改用 <code>StpUtil.getLoginIdAsLong()</code></td></tr>
+                <tr><td>7</td><td>下班打卡主键冲突</td><td>已有记录仍走 insert</td><td>按记录是否有 ID 选择 update/save</td></tr>
+                <tr><td>8</td><td>前端菜单点击无响应</td><td>路由 name 大小写不匹配 + 依赖未更新的 selectedKeys</td><td>菜单 key 映射大写路由 name，使用点击回调参数</td></tr>
+                <tr><td>9</td><td>新增员工工号不可填</td><td>输入框被 <code>disabled</code> 而后端校验必填</td><td>去掉 disabled，支持手动填写并保留唯一校验</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4.3 遗留建议 -->
+        <section id="review-suggestions" class="doc-subsection reveal">
+          <h3>4.3 遗留建议</h3>
+          <ul>
+            <li><strong>权限细化</strong>：目前接口仅做登录校验，建议按角色（admin/hr/supervisor/employee）增加接口级权限码控制。</li>
+            <li><strong>密码策略</strong>：建议增加登录失败锁定、密码强度校验。</li>
+            <li><strong>考勤统计</strong>：月度考勤统计表（<code>attendance_monthly_stat</code>）暂无触发填充逻辑，建议补充定时任务。</li>
+            <li><strong>前端路由守卫</strong>：当前仅校验是否登录，未校验角色页面访问权限，建议完善。</li>
+          </ul>
+        </section>
+      </section>
+
+    </article>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="doc-footer">
+    <div class="content-inner">
+      <p>企业员工管理系统（EAM）· 功能规格说明书 v1.0.0</p>
+    </div>
+  </footer>
+</main>
+
+<!-- 返回顶部按钮 -->
+<button class="back-to-top" id="back-to-top" aria-label="返回顶部" title="返回顶部">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+/* ==========================================================================
+   JavaScript —— 目录生成 / 平滑滚动 / 滚动高亮 / 实时搜索 / 侧边栏固定 /
+   主题切换 / 返回顶部 / 阅读进度 / 代码语法高亮 / 滚动显现动画
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ---- 通用：将目标及其 .reveal 祖先标记为可见（供搜索 / 锚点跳转前调用） ---- */
+  function revealUpTo(el) {
+    let cur = el;
+    while (cur) {
+      if (cur.classList && cur.classList.contains('reveal')) cur.classList.add('visible');
+      cur = cur.parentElement;
+    }
+  }
+
+  /* ---- 1. 依据 H2/H3 自动生成侧边栏 TOC ---- */
+  function buildToc() {
+    const toc = document.getElementById('toc-list');
+    if (!toc) return;
+    document.querySelectorAll('main .doc-section').forEach(section => {
+      const h2 = section.querySelector(':scope > h2');
+      if (!h2) return;
+      const li = document.createElement('li');
+      li.className = 'toc-item';
+      const a = document.createElement('a');
+      a.className = 'toc-link';
+      a.href = '#' + section.id;
+      a.textContent = h2.textContent.trim();
+      li.appendChild(a);
+
+      const subs = section.querySelectorAll(':scope > .doc-subsection');
+      if (subs.length) {
+        const ul = document.createElement('ul');
+        ul.className = 'toc-sublist';
+        subs.forEach(sub => {
+          const h3 = sub.querySelector(':scope > h3');
+          if (!h3) return;
+          const li2 = document.createElement('li');
+          li2.className = 'toc-item toc-item-sub';
+          const a2 = document.createElement('a');
+          a2.className = 'toc-link';
+          a2.href = '#' + sub.id;
+          a2.textContent = h3.textContent.trim();
+          li2.appendChild(a2);
+          ul.appendChild(li2);
+        });
+        li.appendChild(ul);
+      }
+      toc.appendChild(li);
+    });
+  }
+
+  /* ---- 2. 平滑滚动控制器 ---- */
+  class SmoothScrollController {
+    constructor() { this.setupListeners(); }
+
+    scrollToSection(targetId) {
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      revealUpTo(target);
+      const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+      window.scrollTo({ top: targetPosition - 20, behavior: 'smooth' });
+      history.pushState(null, null, '#' + targetId);
+    }
+
+    setupListeners() {
+      document.querySelectorAll('.toc-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.scrollToSection(link.getAttribute('href').substring(1));
+        });
+      });
+    }
+  }
+
+  /* ---- 3. 滚动高亮：取可视带内文档顺序最靠后的 section 作为激活项 ---- */
+  class ActiveSectionTracker {
+    constructor() {
+      this.sections = Array.from(document.querySelectorAll('section[id]'));
+      this.index = new Map(this.sections.map((s, i) => [s, i]));
+      this.tocLinks = Array.from(document.querySelectorAll('.toc-link'));
+      this.visible = new Set();
+      this.setupObserver();
+    }
+
+    setupObserver() {
+      const options = { root: null, rootMargin: '-80px 0px -70%', threshold: 0 };
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) this.visible.add(entry.target);
+          else this.visible.delete(entry.target);
+        });
+        this.updateActive();
+      }, options);
+      this.sections.forEach(section => this.observer.observe(section));
+    }
+
+    updateActive() {
+      let current = null, best = -1;
+      this.visible.forEach(s => { const i = this.index.get(s); if (i > best) { best = i; current = s; } });
+      this.tocLinks.forEach(link => link.classList.remove('active'));
+      if (!current) return;
+      const activeLink = document.querySelector('.toc-link[href="#' + current.id + '"]');
+      if (activeLink) activeLink.classList.add('active');
+    }
+  }
+
+  /* ---- 4. 实时搜索（单次遍历 main，跳过代码块以免破坏语法高亮） ---- */
+  class SearchController {
+    constructor() {
+      this.searchInput = document.getElementById('search-input');
+      this.searchCount = document.getElementById('search-count');
+      this.prevBtn = document.getElementById('search-prev');
+      this.nextBtn = document.getElementById('search-next');
+      this.root = document.querySelector('main') || document.body;
+      this.matches = [];
+      this.currentIndex = -1;
+      this.setupListeners();
+    }
+
+    escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    search(query) {
+      this.clearHighlights();
+      this.matches = [];
+      this.currentIndex = -1;
+
+      if (!query || query.length < 2) { this.updateUI(0); return; }
+
+      const safe = this.escapeRegex(query);
+      const re = new RegExp('(' + safe + ')', 'gi');
+
+      const walker = document.createTreeWalker(this.root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentElement.closest('script, style, mark, pre')) continue;
+        if (re.test(node.textContent)) nodes.push(node);
+        re.lastIndex = 0;
+      }
+      nodes.forEach(n => {
+        const span = document.createElement('span');
+        span.innerHTML = n.textContent.replace(re, '<mark>$1</mark>');
+        n.parentNode.replaceChild(span, n);
+      });
+
+      this.matches = Array.from(document.querySelectorAll('main mark'));
+      this.updateUI(this.matches.length);
+      if (this.matches.length > 0) { this.currentIndex = 0; this.scrollToMatch(0); }
+    }
+
+    scrollToMatch(index) {
+      this.matches.forEach(m => m.classList.remove('mark-active'));
+      const target = this.matches[index];
+      if (!target) return;
+      target.classList.add('mark-active');
+      revealUpTo(target);
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      this.updateUI(this.matches.length);
+    }
+
+    next() {
+      if (!this.matches.length) return;
+      this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+      this.scrollToMatch(this.currentIndex);
+    }
+
+    prev() {
+      if (!this.matches.length) return;
+      this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+      this.scrollToMatch(this.currentIndex);
+    }
+
+    updateUI(total) {
+      this.searchCount.textContent = total === 0
+        ? (this.searchInput.value.length >= 2 ? '无匹配' : '')
+        : (this.currentIndex + 1) + ' / ' + total;
+      const show = total > 0;
+      if (this.prevBtn) this.prevBtn.style.display = show ? 'inline-flex' : 'none';
+      if (this.nextBtn) this.nextBtn.style.display = show ? 'inline-flex' : 'none';
+    }
+
+    clearHighlights() {
+      document.querySelectorAll('mark').forEach(mark => mark.replaceWith(mark.textContent));
+      this.root.normalize();
+    }
+
+    setupListeners() {
+      this.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+      this.searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { this.searchInput.value = ''; this.search(''); }
+        if (e.key === 'Enter') { e.shiftKey ? this.prev() : this.next(); }
+      });
+      this.prevBtn && this.prevBtn.addEventListener('click', () => this.prev());
+      this.nextBtn && this.nextBtn.addEventListener('click', () => this.next());
+    }
+  }
+
+  /* ---- 5. 侧边栏固定 / 收起 / 移动端开合（状态持久化到 localStorage） ---- */
+  class SidebarController {
+    constructor() {
+      this.sidebar = document.getElementById('nav-sidebar');
+      this.pinBtn = document.getElementById('sidebar-pin-btn');
+      this.toggle = document.getElementById('nav-toggle');
+      this.overlay = document.getElementById('sidebar-overlay');
+      this.isMobile = () => window.innerWidth <= 768;
+
+      const saved = localStorage.getItem('sidebar-pinned');
+      const pinned = this.isMobile() ? false : (saved === null ? true : saved === 'true');
+      this.setPinned(pinned, false);
+
+      this.setupListeners();
+    }
+
+    setPinned(pinned, animate = true) {
+      if (!animate) this.sidebar.style.transition = 'none';
+
+      document.body.classList.remove('sidebar-pinned-left', 'sidebar-pinned-right');
+
+      if (pinned) {
+        this.sidebar.classList.add('pinned');
+        this.sidebar.classList.remove('open');
+        document.body.classList.add('sidebar-pinned-left');
+        this.overlay.classList.remove('visible');
+      } else {
+        this.sidebar.classList.remove('pinned');
+        this.close();
+      }
+
+      this.syncPinButton(pinned);
+      localStorage.setItem('sidebar-pinned', pinned);
+
+      if (!animate) requestAnimationFrame(() => { this.sidebar.style.transition = ''; });
+    }
+
+    syncPinButton(pinned) {
+      if (!this.pinBtn) return;
+      const label = pinned ? '收起导航' : '固定导航';
+      this.pinBtn.title = label;
+      this.pinBtn.setAttribute('aria-label', label);
+    }
+
+    open() { this.sidebar.classList.add('open'); this.overlay.classList.add('visible'); }
+    close() { this.sidebar.classList.remove('open'); this.overlay.classList.remove('visible'); }
+
+    setupListeners() {
+      this.pinBtn && this.pinBtn.addEventListener('click', () => {
+        this.setPinned(!this.sidebar.classList.contains('pinned'));
+      });
+      this.toggle && this.toggle.addEventListener('click', () => {
+        this.sidebar.classList.contains('open') ? this.close() : this.open();
+      });
+      this.overlay.addEventListener('click', () => this.close());
+      window.addEventListener('resize', () => {
+        if (this.isMobile()) this.setPinned(false);
+      }, { passive: true });
+    }
+  }
+
+  /* ---- 6. 返回顶部 ---- */
+  class BackToTop {
+    constructor() {
+      this.btn = document.getElementById('back-to-top');
+      if (!this.btn) return;
+      this.threshold = window.innerHeight;
+      this.setupListeners();
+    }
+    setupListeners() {
+      window.addEventListener('scroll', () => {
+        this.btn.classList.toggle('visible', window.scrollY > this.threshold);
+      }, { passive: true });
+      this.btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+  }
+
+  /* ---- 7. 阅读进度条 ---- */
+  class ReadingProgress {
+    constructor() {
+      this.bar = document.getElementById('reading-progress');
+      if (!this.bar) return;
+      this.setupListeners();
+    }
+    setupListeners() {
+      window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        this.bar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+      }, { passive: true });
+    }
+  }
+
+  /* ---- 8. 主题切换（持久化 + 图标/aria 同步） ---- */
+  class ThemeToggle {
+    constructor() {
+      this.html = document.documentElement;
+      this.btn = document.getElementById('theme-toggle');
+      if (!this.btn) return;
+      this.syncButton(this.html.getAttribute('data-theme') || 'light');
+      this.setupListeners();
+    }
+    syncButton(theme) {
+      const dark = theme === 'dark';
+      const label = dark ? '切换到浅色模式' : '切换到深色模式';
+      this.btn.title = label;
+      this.btn.setAttribute('aria-label', label);
+      this.btn.classList.toggle('is-dark', dark);
+    }
+    setupListeners() {
+      this.btn.addEventListener('click', () => {
+        const current = this.html.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        this.html.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        this.syncButton(next);
+      });
+    }
+  }
+
+  /* ---- 9. 代码语法高亮（轻量正则，JSON / Bash） ---- */
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function highlightJson(code) {
+    const re = /("(?:[^"\\]|\\.)*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+    return code.replace(re, (m, str, colon, lit, num) => {
+      if (str !== undefined) {
+        return '<span class="tok-' + (colon ? 'key' : 'string') + '">' + esc(str) + '</span>' + (colon ? esc(colon) : '');
+      }
+      if (lit !== undefined) return '<span class="tok-literal">' + esc(lit) + '</span>';
+      if (num !== undefined) return '<span class="tok-number">' + esc(num) + '</span>';
+      return esc(m);
+    });
+  }
+
+  function highlightBash(code) {
+    const re = /(#[^\n]*)|("(?:[^"\\]|\\.)*")|('(?:[^'\\]|\\.)*')|\b(curl)\b|(https?:\/\/[^\s"'<]+)/g;
+    return code.replace(re, (m, com, dq, sq, kw, url) => {
+      if (com !== undefined) return '<span class="tok-comment">' + esc(com) + '</span>';
+      if (dq !== undefined) return '<span class="tok-string">' + esc(dq) + '</span>';
+      if (sq !== undefined) return '<span class="tok-string">' + esc(sq) + '</span>';
+      if (kw !== undefined) return '<span class="tok-keyword">' + esc(kw) + '</span>';
+      if (url !== undefined) return '<span class="tok-url">' + esc(url) + '</span>';
+      return esc(m);
+    });
+  }
+
+  function highlightCode() {
+    document.querySelectorAll('pre code.language-json').forEach(block => {
+      block.innerHTML = highlightJson(block.textContent);
+    });
+    document.querySelectorAll('pre code.language-bash').forEach(block => {
+      block.innerHTML = highlightBash(block.textContent);
+    });
+  }
+
+  /* ---- 10. 滚动显现动画 ---- */
+  function initReveal() {
+    const els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(el => el.classList.add('visible'));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -60px 0px' });
+    els.forEach(el => observer.observe(el));
+  }
+
+  /* ---- 初始化全部模块 ---- */
+  buildToc();
+  highlightCode();
+  new SmoothScrollController();
+  new ActiveSectionTracker();
+  new SearchController();
+  new SidebarController();
+  new BackToTop();
+  new ReadingProgress();
+  new ThemeToggle();
+  initReveal();
+});
+</script>
+</body>
+</html>

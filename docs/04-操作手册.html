@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业员工管理系统 操作手册</title>
+    <meta name="description" content="本手册介绍系统如何安装、登录以及各功能模块的使用方法，适用于管理员、人事、部门主管与普通员工。">
+
+    <!--
+        字体：Google Fonts（唯一允许的外部依赖，字体 CDN 除外）
+        5 — Paper Docs 预设：Fraunces（标题）/ Source Serif 4（正文）/ JetBrains Mono / Roboto Mono
+    -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Source+Serif+4:wght@400;500&family=JetBrains+Mono:wght@400&family=Roboto+Mono:wght@400;500&display=swap">
+
+    <style>
+        /* ============================================================
+           §0  主题变量（CSS Custom Properties）
+               预设：5 — Paper Docs
+               氛围：衬线编辑风 / 暖白画布 / 锈红强调 / 17px 阅读缩放
+           ============================================================ */
+        :root {
+            /* —— 全局阅读宽度契约（系统常量，各预设不可覆盖）—— */
+            --content-max-width: 1220px;   /* 内容外壳最大宽度 */
+            --content-gutter: 32px;        /* 左右最小留白 */
+            --chart-text-size: 13px;       /* 全站图表文字固定字号（本页无图表，保留常量） */
+
+            /* —— 配色：暖白画布 + 白色表面 + 锈红强调 —— */
+            --bg-primary:     #faf9f7;     /* 页面画布：暖白 */
+            --bg-surface:     #ffffff;     /* 卡片 / 表格 / 侧边栏表面 */
+            --text-primary:   #1a1a1a;     /* 正文主色：近黑 */
+            --text-secondary: #57534e;     /* 次要文本：暖灰 */
+            --border:         #e7e5e4;     /* 细边框：暖灰 */
+            --accent:         #c2410c;     /* 强调色：锈红 */
+            --code-bg:        #f5f5f4;     /* 代码背景：暖浅灰 */
+
+            /* —— 字体（Paper Docs 预设）—— */
+            --font-display:  'Fraunces', serif;         /* 标题衬线展示体 */
+            --font-body:     'Source Serif 4', serif;   /* 正文阅读衬线 */
+            --font-code:     'JetBrains Mono', monospace;
+            --font-numeric:  'Roboto Mono', monospace;
+
+            /* —— 字号与行高（reading 缩放：17px 阅读）—— */
+            --text-body:       1.0625rem;   /* 17px 正文 */
+            --text-small:      0.9375rem;   /* 15px 次级文本 */
+            --text-mono-label: 0.75rem;     /* 等宽小标签 */
+            --lh-body:         1.8;         /* 正文行高，阅读舒适 */
+            --lh-heading:      1.2;         /* 标题行高 */
+
+            /* —— 布局 —— */
+            --sidebar-width: 280px;         /* 侧边栏宽度 */
+            --spacing: 1rem;
+        }
+
+        /* ============================================================
+           §1  基础样式与重置
+           ============================================================ */
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: var(--text-body);
+            line-height: var(--lh-body);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* 锚点滚动留白，避免标题被顶部进度条遮挡 */
+        section[id], h2[id], h3[id] { scroll-margin-top: 5rem; }
+
+        /* 键盘焦点可见样式 */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* 无障碍：跳到主内容的链接 */
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            z-index: 9999;
+            background: var(--bg-surface);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0 0 6px 0;
+            text-decoration: none;
+        }
+        .skip-link:focus { left: 0; }
+
+        /* ============================================================
+           §2  排版：标题 / 正文 / 列表 / 行内代码 / 链接
+           ============================================================ */
+        /* —— 标题：Fraunces 展示衬线 —— */
+        h1, h2, h3, h4 {
+            font-family: var(--font-display);
+            line-height: var(--lh-heading);
+            color: var(--text-primary);
+            text-wrap: balance;
+        }
+
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin: 0 0 1.25rem;
+        }
+
+        /* 二级标题：锈红小方块作为编辑风格的点缀 */
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 3.5rem 0 1.25rem;
+            padding-top: 0.25rem;
+        }
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 0.5em;
+            height: 0.5em;
+            margin-right: 0.65em;
+            background: var(--accent);
+            border-radius: 1px;
+            vertical-align: 0.14em;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 2.5rem 0 1rem;
+        }
+
+        p { margin: 0 0 1.25rem; }
+
+        strong { font-weight: 500; color: var(--text-primary); }
+
+        /* —— 列表 —— */
+        ul, ol {
+            margin: 0 0 1.5rem;
+            padding-left: 1.75rem;
+        }
+        li { margin-bottom: 0.45rem; }
+        li::marker { color: var(--accent); }
+
+        /* —— 链接：平滑下划线微交互 —— */
+        .content a:not(.heading-anchor) {
+            color: var(--accent);
+            text-decoration: none;
+            background-image: linear-gradient(var(--accent), var(--accent));
+            background-size: 0% 1px;
+            background-repeat: no-repeat;
+            background-position: left bottom;
+            transition: background-size 0.3s ease;
+        }
+        .content a:not(.heading-anchor):hover {
+            background-size: 100% 1px;
+        }
+
+        /* —— 行内代码：暖浅灰底 + 锈红文字 —— */
+        code {
+            font-family: var(--font-code);
+            font-size: 0.85em;
+            color: #9a3412;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.08em 0.4em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 标题悬停锚点链接 */
+        .heading-anchor {
+            opacity: 0;
+            margin-left: 0.5rem;
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: opacity 0.2s, color 0.2s;
+            font-family: var(--font-body);
+        }
+        h2:hover .heading-anchor,
+        h3:hover .heading-anchor { opacity: 1; }
+        .heading-anchor:hover { color: var(--accent); }
+
+        /* ============================================================
+           §3  侧边栏导航（固定左侧 / 可固定 / 可展开收起）
+           ============================================================ */
+        .nav-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 固定状态：始终可见，内容右移让位 */
+        .nav-sidebar.pinned { transform: translateX(0) !important; box-shadow: none; }
+        body.sidebar-pinned-left .content { margin-left: var(--sidebar-width); }
+
+        /* 浮动状态：悬浮于内容之上，不遮挡阅读 */
+        .nav-sidebar:not(.pinned) {
+            transform: translateX(-100%);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+        }
+        .nav-sidebar:not(.pinned).open { transform: translateX(0); }
+
+        /* 透明点击捕获层：仅用于关闭浮动侧边栏，不干扰阅读 */
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* —— 侧边栏头部：标题 + 固定/收起按钮 —— */
+        .nav-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .nav-title {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .nav-title small {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 0.15rem;
+        }
+
+        /* 固定按钮：浮动时显示大头针，固定后显示收起箭头 */
+        .sidebar-pin-btn {
+            flex-shrink: 0;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.3rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .sidebar-pin-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .sidebar-pin-btn svg { width: 18px; height: 18px; }
+        .sidebar-pin-btn .collapse-icon { display: none; }
+        .nav-sidebar.pinned .sidebar-pin-btn .pin-icon { display: none; }
+        .nav-sidebar.pinned .sidebar-pin-btn .collapse-icon { display: block; }
+
+        /* —— 搜索框 —— */
+        .nav-search { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 1.5rem; }
+        .nav-search input[type="search"] {
+            flex: 1;
+            min-width: 0;
+            font-family: var(--font-body);
+            font-size: var(--text-small);
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            transition: border-color 0.2s;
+        }
+        .nav-search input[type="search"]::placeholder { color: var(--text-secondary); }
+        .nav-search input[type="search"]:focus { border-color: var(--accent); outline: none; }
+
+        .search-nav-btn {
+            padding: 0.3rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: all 0.15s;
+        }
+        .search-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .search-count {
+            font-family: var(--font-numeric);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* 搜索命中高亮 */
+        mark { background: #ffeb3b; color: #000; border-radius: 2px; padding: 0 2px; }
+        mark.mark-active { background: #ff9800; outline: 2px solid #ff9800; }
+
+        /* —— 目录（TOC）—— */
+        .toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .toc-list > li { margin-bottom: 0.15rem; }
+
+        .toc-link {
+            display: block;
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--text-small);
+            line-height: 1.5;
+            transition: color 0.2s ease, background-color 0.2s ease, padding-left 0.2s ease;
+        }
+        .toc-link:hover { color: var(--text-primary); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+
+        /* 当前阅读区块高亮（Paper Docs 预设：锈红淡染 + 圆角） */
+        .toc-link.active {
+            color: var(--accent);
+            background: color-mix(in srgb, var(--accent) 7%, transparent);
+            border-radius: 4px;
+            padding-left: 1.1rem;
+        }
+
+        /* 三级目录：缩进 + 细分隔线 */
+        .toc-sublist {
+            list-style: none;
+            margin: 0 0 0 0.75rem;
+            padding-left: 0.75rem;
+            border-left: 1px solid var(--border);
+        }
+        .toc-sublist .toc-link { font-size: 0.85rem; padding: 0.28rem 0.6rem; }
+
+        /* —— 侧边栏展开按钮（汉堡）—— */
+        .nav-toggle {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 998;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            transition: opacity 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .nav-toggle:hover { color: var(--accent); border-color: var(--accent); }
+        .nav-toggle svg { width: 20px; height: 20px; }
+
+        /* 固定侧边栏后隐藏汉堡按钮 */
+        body.sidebar-pinned-left .nav-toggle { display: none; }
+
+        /* ============================================================
+           §4  内容区域与文章版式
+           全局 1220px 外壳，两侧各保持 32px 最小留白
+           ============================================================ */
+        .content {
+            padding-block: 3rem;
+            transition: margin 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .content-inner {
+            width: min(calc(100% - var(--content-gutter) - var(--content-gutter)), var(--content-max-width));
+            max-width: var(--content-max-width);
+            margin-inline: auto;
+        }
+
+        /* —— 文档头部 —— */
+        .doc-header {
+            padding: 1.5rem 0 2.5rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+        .doc-header .doc-eyebrow {
+            font-family: var(--font-numeric);
+            font-size: var(--text-mono-label);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        /* —— 文档小节 —— */
+        .doc-section { padding-bottom: 0.5rem; }
+        .doc-subsection { margin-top: 0.5rem; }
+        .doc-subsection h3 { margin-top: 1.5rem; }
+
+        /* ============================================================
+           §5  引用 / 提示块（Callout）
+           遵循卡片规范：全周边框，不使用单侧色条
+           ============================================================ */
+        .callout {
+            display: flex;
+            gap: 0.85rem;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--accent) 4%, var(--bg-surface));
+            font-size: var(--text-small);
+        }
+        /* 小圆点图标（无 emoji，符合规范） */
+        .callout::before {
+            content: '';
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            margin-top: 0.62em;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+        .callout p { margin: 0; }
+
+        /* ============================================================
+           §6  表格（响应式）
+           ============================================================ */
+        .table-wrap {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 1.5rem 0;
+            /* 内凹（Inset）模式：数据表格专用 */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .table-wrap table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 420px; /* 窄屏可横向滚动，保证可读性 */
+        }
+
+        .table-wrap th,
+        .table-wrap td {
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: var(--text-small);
+            vertical-align: top;
+        }
+
+        .table-wrap thead th {
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+            background: var(--bg-primary);
+        }
+
+        .table-wrap tbody tr { transition: background-color 0.15s ease; }
+        .table-wrap tbody tr:hover { background: color-mix(in srgb, var(--accent) 3%, var(--bg-surface)); }
+        .table-wrap tbody tr:last-child td { border-bottom: 0; }
+        .table-wrap code { font-size: 0.875em; }
+
+        /* ============================================================
+           §7  代码块（语法高亮 + 复制按钮）
+           ============================================================ */
+        pre.code-block {
+            position: relative;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+            padding: 1.25rem 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: var(--font-code);
+            font-size: 0.875rem;
+            line-height: 1.7;
+            -webkit-overflow-scrolling: touch;
+        }
+        pre.code-block code {
+            background: none;
+            border: 0;
+            padding: 0;
+            font-size: 1em;
+            color: var(--text-primary);
+        }
+
+        /* 语法高亮配色（暖调，与 Paper Docs 一致） */
+        .token.keyword  { color: #b45309; font-weight: 500; }
+        .token.string   { color: #9a3412; }
+        .token.comment  { color: #78716c; font-style: italic; }
+        .token.number   { color: #7c2d12; }
+        .token.prompt   { color: var(--accent); font-weight: 500; }
+
+        /* 复制按钮 */
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.75rem;
+            font-family: var(--font-code);
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        pre.code-block:hover .copy-btn { opacity: 1; }
+        .copy-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+        /* ============================================================
+           §8  FAQ 条目（问答卡片）
+           ============================================================ */
+        .faq-item {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s ease;
+        }
+        .faq-item:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+        .faq-item .faq-q {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--accent);
+            margin: 0 0 0.5rem;
+        }
+        .faq-item p:last-child { margin-bottom: 0; }
+
+        /* ============================================================
+           §9  阅读进度条（顶部细线）
+           ============================================================ */
+        .reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: var(--accent);
+            z-index: 9999;
+            transition: width 0.1s linear;
+        }
+
+        /* ============================================================
+           §10 返回顶部按钮
+           ============================================================ */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 900;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            /* 默认隐藏，滚动后出现 */
+            opacity: 0;
+            transform: translateY(12px);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .back-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .back-to-top:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+        .back-to-top:active { transform: translateY(0); }
+
+        /* ============================================================
+           §11 滚动显现动画（Warm / Editorial：慢速显现）
+           仅在 JS 可用时隐藏初始内容，避免无 JS 时内容不可见
+           ============================================================ */
+        html.js-anim .reveal {
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        html.js-anim .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ============================================================
+           §12 响应式设计
+           ============================================================ */
+        /* 平板（768–1024px）：收窄侧边栏 */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .content { padding-block: 2rem; }
+            .nav-sidebar { width: 240px; }
+            h1 { font-size: 2.25rem; }
+        }
+
+        /* 移动端（<768px）：侧边栏浮层覆盖，禁用固定功能 */
+        @media (max-width: 768px) {
+            .nav-sidebar {
+                transform: translateX(-100%) !important;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+                width: min(80vw, 320px);
+            }
+            .nav-sidebar.open { transform: translateX(0) !important; }
+            .content {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                padding-block: 1.5rem;
+            }
+            .content-inner {
+                width: calc(100% - var(--content-gutter) - var(--content-gutter));
+                max-width: var(--content-max-width);
+            }
+            .nav-toggle { display: flex !important; }
+            .sidebar-pin-btn { display: none; } /* 移动端不支持固定 */
+            h1 { font-size: 1.9rem; }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.2rem; }
+            .back-to-top { bottom: 1.25rem; right: 1.25rem; }
+        }
+
+        /* 减少动效偏好：关闭过渡与显现动画 */
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+            html.js-anim .reveal { opacity: 1; transform: none; transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 首帧前恢复侧边栏固定状态，避免闪烁 -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('sidebar-pinned');
+                var pinned = window.innerWidth > 768 && (saved === null ? true : saved === 'true');
+                if (pinned) document.body.classList.add('sidebar-pinned-left');
+            } catch (e) {}
+        })();
+    </script>
+
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+    <!-- 阅读进度条 -->
+    <div class="reading-progress" id="reading-progress"></div>
+
+    <!-- ============================================================
+         侧边栏导航（左侧）：标题 / 搜索 / 目录 / 固定控制
+         ============================================================ -->
+    <aside class="nav-sidebar nav-sidebar-left" id="nav-sidebar">
+        <div class="nav-header">
+            <h1 class="nav-title">企业员工管理系统<small>操作手册</small></h1>
+            <!-- 浮动时显示大头针图标；固定后切换为收起箭头图标 -->
+            <button class="sidebar-pin-btn" id="sidebar-pin-btn" title="固定导航" aria-label="固定导航">
+                <svg class="pin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6"/><path d="M10 4v4l-3 3v2h10v-2l-3-3V4"/><path d="M12 13v7"/></svg>
+                <svg class="collapse-icon" viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 15.25L5.25 9L11.5 2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+        </div>
+
+        <!-- 实时搜索 -->
+        <div class="nav-search">
+            <input type="search" id="search-input" placeholder="搜索文档…" aria-label="搜索文档" />
+            <button id="search-prev" class="search-nav-btn" style="display:none" title="上一个（Shift+Enter）" aria-label="上一个匹配">↑</button>
+            <button id="search-next" class="search-nav-btn" style="display:none" title="下一个（Enter）" aria-label="下一个匹配">↓</button>
+            <span class="search-count" id="search-count"></span>
+        </div>
+
+        <!-- 目录（自动生成，随滚动高亮） -->
+        <nav class="toc" aria-label="目录">
+            <ul class="toc-list">
+                <li>
+                    <a class="toc-link" href="#access">1. 系统访问</a>
+                    <ul class="toc-sublist">
+                        <li><a class="toc-link" href="#access-urls">1.1 访问地址</a></li>
+                        <li><a class="toc-link" href="#login">1.2 登录</a></li>
+                        <li><a class="toc-link" href="#test-accounts">1.3 测试账号</a></li>
+                    </ul>
+                </li>
+                <li><a class="toc-link" href="#dashboard">2. 数据看板</a></li>
+                <li><a class="toc-link" href="#departments">3. 部门管理</a></li>
+                <li><a class="toc-link" href="#positions">4. 职位管理</a></li>
+                <li><a class="toc-link" href="#employees">5. 员工管理</a></li>
+                <li>
+                    <a class="toc-link" href="#attendance">6. 考勤管理</a>
+                    <ul class="toc-sublist">
+                        <li><a class="toc-link" href="#clock-in">6.1 打卡</a></li>
+                        <li><a class="toc-link" href="#record-search">6.2 记录查询</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a class="toc-link" href="#leave">7. 请假管理</a>
+                    <ul class="toc-sublist">
+                        <li><a class="toc-link" href="#leave-apply">7.1 员工提交申请</a></li>
+                        <li><a class="toc-link" href="#leave-approve">7.2 主管审批</a></li>
+                        <li><a class="toc-link" href="#leave-status">7.3 进度查看</a></li>
+                    </ul>
+                </li>
+                <li><a class="toc-link" href="#salary">8. 薪资管理</a></li>
+                <li><a class="toc-link" href="#personal">9. 个人操作</a></li>
+                <li><a class="toc-link" href="#faq">10. 常见问题（FAQ）</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 透明点击捕获层：点击外部关闭浮动侧边栏 -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- 侧边栏展开按钮（三横线图标） -->
+    <button class="nav-toggle" id="nav-toggle" title="展开导航" aria-label="展开导航">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+    </button>
+
+    <!-- ============================================================
+         主内容区域
+         ============================================================ -->
+    <main class="content" id="main-content">
+        <div class="content-inner">
+
+            <!-- 文档标题（H1） -->
+            <header class="doc-header reveal" id="doc-title">
+                <p class="doc-eyebrow">操作手册 · 企业员工管理系统</p>
+                <h1>企业员工管理系统 操作手册</h1>
+                <blockquote class="callout">
+                    <p>本手册介绍系统如何安装、登录以及各功能模块的使用方法，适用于管理员、人事、部门主管与普通员工。</p>
+                </blockquote>
+            </header>
+
+            <!-- 1. 系统访问 -->
+            <section id="access" class="doc-section reveal" aria-labelledby="access-title">
+                <h2 id="access-title">1. 系统访问</h2>
+
+                <!-- 1.1 访问地址 -->
+                <section id="access-urls" class="doc-subsection" aria-labelledby="access-urls-title">
+                    <h3 id="access-urls-title">1.1 访问地址</h3>
+                    <div class="table-wrap" tabindex="0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">入口</th>
+                                    <th scope="col">地址</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>前端页面</td>
+                                    <td><code>http://localhost:3000</code></td>
+                                </tr>
+                                <tr>
+                                    <td>后端接口文档</td>
+                                    <td><code>http://localhost:8080/doc.html</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 1.2 登录 -->
+                <section id="login" class="doc-subsection" aria-labelledby="login-title">
+                    <h3 id="login-title">1.2 登录</h3>
+                    <ol>
+                        <li>打开浏览器访问前端地址，进入登录页。</li>
+                        <li>输入用户名与密码（默认密码均为 <code>123456</code>）。</li>
+                        <li>点击「登录」进入系统，登录成功后跳转数据看板。</li>
+                    </ol>
+                    <blockquote class="callout">
+                        <p>不同角色登录后功能权限一致，但业务操作范围不同（详见各章节说明）。</p>
+                    </blockquote>
+                </section>
+
+                <!-- 1.3 测试账号 -->
+                <section id="test-accounts" class="doc-subsection" aria-labelledby="test-accounts-title">
+                    <h3 id="test-accounts-title">1.3 测试账号</h3>
+                    <div class="table-wrap" tabindex="0">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th scope="col">账号</th>
+                                    <th scope="col">角色</th>
+                                    <th scope="col">适用场景</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>admin</code></td>
+                                    <td>系统管理员</td>
+                                    <td>全功能操作</td>
+                                </tr>
+                                <tr>
+                                    <td><code>wang_zg</code></td>
+                                    <td>人事</td>
+                                    <td>员工、薪资、考勤管理</td>
+                                </tr>
+                                <tr>
+                                    <td><code>li_jl</code></td>
+                                    <td>研发部主管</td>
+                                    <td>审批请假</td>
+                                </tr>
+                                <tr>
+                                    <td><code>liu_gc</code></td>
+                                    <td>普通员工</td>
+                                    <td>打卡、请假申请</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- 2. 数据看板 -->
+            <section id="dashboard" class="doc-section reveal" aria-labelledby="dashboard-title">
+                <h2 id="dashboard-title">2. 数据看板</h2>
+                <p>登录后默认进入「数据看板」，一屏展示核心指标：</p>
+                <ul>
+                    <li>员工总数 / 在职员工数 / 本月新入职</li>
+                    <li>部门数量</li>
+                    <li>待审批请假数量</li>
+                    <li>今日打卡人数 / 今日迟到人数</li>
+                </ul>
+                <p><strong>用途</strong>：管理层快速掌握人事运营概况。</p>
+            </section>
+
+            <!-- 3. 部门管理 -->
+            <section id="departments" class="doc-section reveal" aria-labelledby="departments-title">
+                <h2 id="departments-title">3. 部门管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 部门管理</p>
+                <ul>
+                    <li><strong>查看</strong>：以树形展示总公司与子部门。</li>
+                    <li><strong>新增</strong>：点击「新增部门」，填写部门名称、父部门、排序、状态，点击确定。</li>
+                    <li><strong>编辑</strong>：点击行内「编辑」修改部门信息，可设置部门主管。</li>
+                    <li><strong>删除</strong>：点击行内「删除」并确认（逻辑删除，不物理移除数据）。</li>
+                </ul>
+            </section>
+
+            <!-- 4. 职位管理 -->
+            <section id="positions" class="doc-section reveal" aria-labelledby="positions-title">
+                <h2 id="positions-title">4. 职位管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 职位管理</p>
+                <ul>
+                    <li><strong>查看</strong>：职位列表（职位名称、所属部门、职级）。</li>
+                    <li><strong>新增</strong>：点击「新增职位」，填写职位名称、所属部门、职级（P1–P8）。</li>
+                    <li><strong>编辑 / 删除</strong>：对应行内操作按钮。</li>
+                </ul>
+            </section>
+
+            <!-- 5. 员工管理 -->
+            <section id="employees" class="doc-section reveal" aria-labelledby="employees-title">
+                <h2 id="employees-title">5. 员工管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 员工管理</p>
+                <ul>
+                    <li><strong>查看</strong>：员工列表，支持按姓名/工号搜索、按部门筛选。</li>
+                    <li><strong>新增</strong>：点击「新增员工」，填写姓名、<strong>工号（必填且唯一）</strong>、部门、职位、入职日期、联系方式等，点击确定。</li>
+                    <li><strong>编辑</strong>：修改员工档案信息。</li>
+                    <li><strong>离职</strong>：点击「离职」办理离职，员工状态变为「离职」。</li>
+                    <li><strong>删除</strong>：点击「删除」并确认（逻辑删除）。</li>
+                </ul>
+                <blockquote class="callout">
+                    <p>工号已存在时系统会提示，需更换工号后重试。</p>
+                </blockquote>
+            </section>
+
+            <!-- 6. 考勤管理 -->
+            <section id="attendance" class="doc-section reveal" aria-labelledby="attendance-title">
+                <h2 id="attendance-title">6. 考勤管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 考勤管理</p>
+
+                <!-- 6.1 打卡 -->
+                <section id="clock-in" class="doc-subsection" aria-labelledby="clock-in-title">
+                    <h3 id="clock-in-title">6.1 打卡</h3>
+                    <ol>
+                        <li>进入考勤页面，点击「上班打卡」。</li>
+                        <li>下班时点击「下班打卡」。</li>
+                        <li>系统按考勤规则自动判定状态：正常 / 迟到 / 早退 / 缺卡。</li>
+                    </ol>
+                </section>
+
+                <!-- 6.2 记录查询 -->
+                <section id="record-search" class="doc-subsection" aria-labelledby="record-search-title">
+                    <h3 id="record-search-title">6.2 记录查询</h3>
+                    <ul>
+                        <li>选择员工、起止日期查询考勤记录。</li>
+                        <li>同一员工同一天仅一条记录，下班打卡自动补录到当日记录。</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- 7. 请假管理 -->
+            <section id="leave" class="doc-section reveal" aria-labelledby="leave-title">
+                <h2 id="leave-title">7. 请假管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 请假管理</p>
+
+                <!-- 7.1 员工提交申请 -->
+                <section id="leave-apply" class="doc-subsection" aria-labelledby="leave-apply-title">
+                    <h3 id="leave-apply-title">7.1 员工提交申请</h3>
+                    <ol>
+                        <li>切换至「申请请假」。</li>
+                        <li>选择请假类型（年假 / 病假 / 事假 / 婚假）。</li>
+                        <li>选择开始、结束时间，填写请假原因。</li>
+                        <li>点击提交，系统自动计算请假天数，并自动指派部门主管为审批人。</li>
+                    </ol>
+                </section>
+
+                <!-- 7.2 主管审批 -->
+                <section id="leave-approve" class="doc-subsection" aria-labelledby="leave-approve-title">
+                    <h3 id="leave-approve-title">7.2 主管审批</h3>
+                    <ol>
+                        <li>以部门主管账号登录，进入请假管理。</li>
+                        <li>切换至「待我审批」列表。</li>
+                        <li>查看申请详情后点击「批准」或「拒绝」。</li>
+                    </ol>
+                </section>
+
+                <!-- 7.3 进度查看 -->
+                <section id="leave-status" class="doc-subsection" aria-labelledby="leave-status-title">
+                    <h3 id="leave-status-title">7.3 进度查看</h3>
+                    <ul>
+                        <li>员工可在「我的请假」查看申请状态（待审批 / 已批准 / 已拒绝）与审批时间。</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- 8. 薪资管理 -->
+            <section id="salary" class="doc-section reveal" aria-labelledby="salary-title">
+                <h2 id="salary-title">8. 薪资管理</h2>
+                <p><strong>入口</strong>：左侧菜单 → 薪资管理</p>
+                <ol>
+                    <li>选择年份、月份查看薪资列表。</li>
+                    <li>点击「新增薪资」，选择员工，填写基本工资、奖金、津贴、扣款。</li>
+                    <li>系统自动计算实发工资，点击保存。</li>
+                    <li>可对已有记录进行编辑。</li>
+                </ol>
+                <blockquote class="callout">
+                    <p>同一员工同年月仅允许一条薪资记录，重复录入会被拦截。</p>
+                </blockquote>
+            </section>
+
+            <!-- 9. 个人操作 -->
+            <section id="personal" class="doc-section reveal" aria-labelledby="personal-title">
+                <h2 id="personal-title">9. 个人操作</h2>
+                <ul>
+                    <li><strong>退出登录</strong>：右上角用户名下拉菜单 → 退出登录。</li>
+                    <li><strong>接口文档</strong>：开发人员可访问 <code>http://localhost:8080/doc.html</code> 在线调试接口。</li>
+                </ul>
+            </section>
+
+            <!-- 10. 常见问题（FAQ） -->
+            <section id="faq" class="doc-section reveal" aria-labelledby="faq-title">
+                <h2 id="faq-title">10. 常见问题（FAQ）</h2>
+
+                <div class="faq-item">
+                    <p class="faq-q"><strong>Q1：登录提示“用户名或密码错误”？</strong></p>
+                    <p>确认账号存在且密码为 <code>123456</code>；若数据库曾重置，需重新执行初始化脚本。</p>
+                </div>
+
+                <div class="faq-item">
+                    <p class="faq-q"><strong>Q2：新增员工提示“工号不能为空”？</strong></p>
+                    <p>工号为必填项，请手动填写唯一工号（如 EMP011）。</p>
+                </div>
+
+                <div class="faq-item">
+                    <p class="faq-q"><strong>Q3：打卡后看不到记录？</strong></p>
+                    <p>刷新页面并在考勤记录中按日期查询；同一天重复打卡只会更新当日记录。</p>
+                </div>
+
+                <div class="faq-item">
+                    <p class="faq-q"><strong>Q4：提交请假后一直“待审批”？</strong></p>
+                    <p>请用对应部门主管账号登录，在「待我审批」中处理；审批完成后状态自动更新。</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- 返回顶部按钮 -->
+    <button class="back-to-top" id="back-to-top" aria-label="返回顶部" title="返回顶部">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+    </button>
+
+    <script>
+        /* 前置标记：JS 可用（防止无 JS 时内容因显现动画被隐藏） */
+        document.documentElement.classList.add('js-anim');
+
+        /* ============================================================
+           §A  平滑滚动控制器
+           ============================================================ */
+        class SmoothScrollController {
+            constructor() { this.setupListeners(); }
+
+            scrollToSection(targetId) {
+                const target = document.getElementById(targetId);
+                if (!target) return;
+                const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+                window.scrollTo({ top: targetPosition - 20, behavior: 'smooth' });
+                history.pushState(null, null, '#' + targetId);
+            }
+
+            setupListeners() {
+                document.querySelectorAll('.toc-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.scrollToSection(link.getAttribute('href').substring(1));
+                    });
+                });
+            }
+        }
+
+        /* ============================================================
+           §B  当前区块跟踪（滚动时高亮侧边栏目录）
+           ============================================================ */
+        class ActiveSectionTracker {
+            constructor() {
+                this.sections = Array.from(document.querySelectorAll('section[id]'));
+                this.tocLinks = Array.from(document.querySelectorAll('.toc-link'));
+                this.setupObserver();
+            }
+
+            setupObserver() {
+                const options = { root: null, rootMargin: '-100px 0px -66%', threshold: 0 };
+                this.observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) this.updateActiveTOC(entry.target.id);
+                    });
+                }, options);
+                this.sections.forEach(section => this.observer.observe(section));
+            }
+
+            updateActiveTOC(sectionId) {
+                this.tocLinks.forEach(link => link.classList.remove('active'));
+                const activeLink = document.querySelector('.toc-link[href="#' + sectionId + '"]');
+                if (activeLink) activeLink.classList.add('active');
+            }
+        }
+
+        /* ============================================================
+           §C  实时搜索控制器（关键词高亮 + 上下跳转）
+           ============================================================ */
+        class SearchController {
+            constructor() {
+                this.searchInput = document.getElementById('search-input');
+                this.searchCount = document.getElementById('search-count');
+                this.prevBtn = document.getElementById('search-prev');
+                this.nextBtn = document.getElementById('search-next');
+                this.sections = Array.from(document.querySelectorAll('section'));
+                this.matches = [];
+                this.currentIndex = -1;
+                this.setupListeners();
+            }
+
+            escapeRegex(str) {
+                return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+
+            search(query) {
+                this.clearHighlights();
+                this.matches = [];
+                this.currentIndex = -1;
+
+                if (!query || query.length < 2) { this.updateUI(0); return; }
+
+                const safe = this.escapeRegex(query);
+                const re = new RegExp('(' + safe + ')', 'gi');
+
+                this.sections.forEach(section => {
+                    const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
+                    const nodes = [];
+                    let node;
+                    while (node = walker.nextNode()) {
+                        if (node.parentElement.closest('script, style, mark')) continue;
+                        if (re.test(node.textContent)) nodes.push(node);
+                        re.lastIndex = 0;
+                    }
+                    nodes.forEach(n => {
+                        const span = document.createElement('span');
+                        span.innerHTML = n.textContent.replace(re, '<mark>$1</mark>');
+                        n.parentNode.replaceChild(span, n);
+                    });
+                });
+
+                this.matches = Array.from(document.querySelectorAll('mark'));
+                this.updateUI(this.matches.length);
+                if (this.matches.length > 0) { this.currentIndex = 0; this.scrollToMatch(0); }
+            }
+
+            scrollToMatch(index) {
+                this.matches.forEach(m => m.classList.remove('mark-active'));
+                const target = this.matches[index];
+                if (!target) return;
+                target.classList.add('mark-active');
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.updateUI(this.matches.length);
+            }
+
+            next() {
+                if (!this.matches.length) return;
+                this.currentIndex = (this.currentIndex + 1) % this.matches.length;
+                this.scrollToMatch(this.currentIndex);
+            }
+
+            prev() {
+                if (!this.matches.length) return;
+                this.currentIndex = (this.currentIndex - 1 + this.matches.length) % this.matches.length;
+                this.scrollToMatch(this.currentIndex);
+            }
+
+            updateUI(total) {
+                this.searchCount.textContent = total === 0
+                    ? (this.searchInput.value.length >= 2 ? '无匹配' : '')
+                    : (this.currentIndex + 1) + ' / ' + total;
+                const show = total > 0;
+                if (this.prevBtn) this.prevBtn.style.display = show ? 'inline-flex' : 'none';
+                if (this.nextBtn) this.nextBtn.style.display = show ? 'inline-flex' : 'none';
+            }
+
+            clearHighlights() {
+                document.querySelectorAll('mark').forEach(mark => {
+                    mark.replaceWith(mark.textContent);
+                });
+                this.sections.forEach(s => s.normalize());
+            }
+
+            setupListeners() {
+                this.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+
+                this.searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { this.searchInput.value = ''; this.search(''); }
+                    if (e.key === 'Enter') { e.shiftKey ? this.prev() : this.next(); }
+                });
+
+                this.prevBtn && this.prevBtn.addEventListener('click', () => this.prev());
+                this.nextBtn && this.nextBtn.addEventListener('click', () => this.next());
+            }
+        }
+
+        /* ============================================================
+           §D  侧边栏控制器（固定 / 浮动 / 移动端开关）
+           ============================================================ */
+        class SidebarController {
+            constructor() {
+                this.sidebar = document.getElementById('nav-sidebar');
+                this.pinBtn = document.getElementById('sidebar-pin-btn');
+                this.toggle = document.getElementById('nav-toggle');
+                this.overlay = document.getElementById('sidebar-overlay');
+                this.isMobile = () => window.innerWidth <= 768;
+
+                const saved = localStorage.getItem('sidebar-pinned');
+                const pinned = this.isMobile() ? false : (saved === null ? true : saved === 'true');
+                this.setPinned(pinned, false);
+                this.setupListeners();
+            }
+
+            setPinned(pinned, animate = true) {
+                if (!animate) this.sidebar.style.transition = 'none';
+
+                document.body.classList.remove('sidebar-pinned-left', 'sidebar-pinned-right');
+
+                if (pinned) {
+                    this.sidebar.classList.add('pinned');
+                    this.sidebar.classList.remove('open');
+                    document.body.classList.add('sidebar-pinned-left');
+                    this.overlay.classList.remove('visible');
+                } else {
+                    this.sidebar.classList.remove('pinned');
+                    this.close();
+                }
+
+                this.syncPinButton(pinned);
+                localStorage.setItem('sidebar-pinned', pinned);
+
+                if (!animate) {
+                    requestAnimationFrame(() => { this.sidebar.style.transition = ''; });
+                }
+            }
+
+            syncPinButton(pinned) {
+                if (!this.pinBtn) return;
+                const label = pinned ? '收起导航' : '固定导航';
+                this.pinBtn.title = label;
+                this.pinBtn.setAttribute('aria-label', label);
+            }
+
+            open() {
+                this.sidebar.classList.add('open');
+                this.overlay.classList.add('visible');
+            }
+
+            close() {
+                this.sidebar.classList.remove('open');
+                this.overlay.classList.remove('visible');
+            }
+
+            setupListeners() {
+                this.pinBtn && this.pinBtn.addEventListener('click', () => {
+                    this.setPinned(!this.sidebar.classList.contains('pinned'));
+                });
+
+                this.toggle && this.toggle.addEventListener('click', () => {
+                    this.sidebar.classList.contains('open') ? this.close() : this.open();
+                });
+
+                this.overlay.addEventListener('click', () => this.close());
+
+                window.addEventListener('resize', () => {
+                    if (this.isMobile()) this.setPinned(false);
+                }, { passive: true });
+            }
+        }
+
+        /* ============================================================
+           §E  返回顶部按钮
+           ============================================================ */
+        class BackToTop {
+            constructor() {
+                this.btn = document.getElementById('back-to-top');
+                if (!this.btn) return;
+                this.threshold = window.innerHeight;
+                this.setupListeners();
+            }
+
+            setupListeners() {
+                window.addEventListener('scroll', () => {
+                    this.btn.classList.toggle('visible', window.scrollY > this.threshold);
+                }, { passive: true });
+
+                this.btn.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+        }
+
+        /* ============================================================
+           §F  阅读进度条
+           ============================================================ */
+        class ReadingProgress {
+            constructor() {
+                this.bar = document.getElementById('reading-progress');
+                if (!this.bar) return;
+                this.update = this.update.bind(this);
+                window.addEventListener('scroll', this.update, { passive: true });
+                window.addEventListener('resize', this.update, { passive: true });
+                this.update();
+            }
+
+            update() {
+                const doc = document.documentElement;
+                const max = doc.scrollHeight - window.innerHeight;
+                const p = max > 0 ? (window.scrollY / max) * 100 : 0;
+                this.bar.style.width = p + '%';
+            }
+        }
+
+        /* ============================================================
+           §G  滚动显现动画（Intersection Observer）
+           ============================================================ */
+        class RevealAnimator {
+            constructor() {
+                this.observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            this.observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+                document.querySelectorAll('.reveal').forEach(el => this.observer.observe(el));
+            }
+        }
+
+        /* ============================================================
+           §H  代码语法高亮（基于正则的轻量实现）
+           使用占位符方式避免二次包裹，支持注释 / 字符串 / 数字 / 关键字 / 终端提示符
+           ============================================================ */
+        function highlightCode() {
+            document.querySelectorAll('pre.code-block code').forEach(block => {
+                const lang = (block.className.replace('language-', '') || '').trim();
+                block.innerHTML = applyHighlighting(block.textContent, lang);
+            });
+        }
+
+        function applyHighlighting(code, lang) {
+            let s = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const tokens = [];
+
+            // 注释（块注释 / 行注释 / # 注释）
+            s = s.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|^(\s*)(#[^\n]*)$/gm, (m) => {
+                tokens.push('<span class="token comment">' + m + '</span>');
+                return '\u0000' + (tokens.length - 1) + '\u0000';
+            });
+            // 字符串（单引号 / 双引号）
+            s = s.replace(/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/g, (m) => {
+                tokens.push('<span class="token string">' + m + '</span>');
+                return '\u0000' + (tokens.length - 1) + '\u0000';
+            });
+            // 数字
+            s = s.replace(/\b\d+(?:\.\d+)?\b/g, (m) => {
+                tokens.push('<span class="token number">' + m + '</span>');
+                return '\u0000' + (tokens.length - 1) + '\u0000';
+            });
+            // 关键字
+            const kw = /^(function|const|let|var|return|if|else|for|while|class|import|from|export|def|echo|select|insert|update|delete|where)$/;
+            s = s.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (m) => {
+                if (kw.test(m)) {
+                    tokens.push('<span class="token keyword">' + m + '</span>');
+                    return '\u0000' + (tokens.length - 1) + '\u0000';
+                }
+                return m;
+            });
+            // 终端提示符（行首）
+            s = s.replace(/^(>|#|\$)\s/gm, (m) => {
+                tokens.push('<span class="token prompt">' + m + '</span>');
+                return '\u0000' + (tokens.length - 1) + '\u0000';
+            });
+            // 还原占位符
+            s = s.replace(/\u0000(\d+)\u0000/g, (m, i) => tokens[+i]);
+            return s;
+        }
+
+        /* ============================================================
+           §I  代码块复制按钮（微交互）
+           ============================================================ */
+        function addCopyButtons() {
+            document.querySelectorAll('pre.code-block').forEach(block => {
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn';
+                btn.type = 'button';
+                btn.textContent = '复制';
+                btn.setAttribute('aria-label', '复制代码');
+                block.appendChild(btn);
+
+                btn.addEventListener('click', () => {
+                    const text = block.querySelector('code').textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        btn.textContent = '已复制';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = '复制';
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    }).catch(() => {});
+                });
+            });
+        }
+
+        /* ============================================================
+           §J  标题锚点链接（悬停出现）
+           ============================================================ */
+        function addHeadingAnchors() {
+            document.querySelectorAll('h2[id], h3[id]').forEach(h => {
+                const a = document.createElement('a');
+                a.className = 'heading-anchor';
+                a.href = '#' + h.id;
+                a.setAttribute('aria-hidden', 'true');
+                a.textContent = '#';
+                h.appendChild(a);
+            });
+        }
+
+        /* ============================================================
+           初始化所有模块
+           ============================================================ */
+        document.addEventListener('DOMContentLoaded', () => {
+            new SmoothScrollController();
+            new ActiveSectionTracker();
+            new SearchController();
+            new SidebarController();
+            new BackToTop();
+            new ReadingProgress();
+            new RevealAnimator();
+            highlightCode();
+            addCopyButtons();
+            addHeadingAnchors();
+        });
+    </script>
+</body>
+</html>

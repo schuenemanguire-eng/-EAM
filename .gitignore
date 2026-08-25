@@ -1,0 +1,64 @@
+# ============================================================
+# CloudStudio / Git 通用 .gitignore
+# 企业员工管理系统 EAM
+# ============================================================
+
+# ---------- 依赖目录（前端/后端都不要提交） ----------
+node_modules/
+.pnpm-store/
+jspm_packages/
+
+# Maven 构建产物与本地仓库（不提交，避免几 GB 垃圾）
+target/
+!.mvn/wrapper/maven-wrapper.jar
+mvn_local_repo/
+.mvn/
+*.jar
+*.war
+*.ear
+
+# ---------- IDE ----------
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/settings.json
+.vscode/launch.json
+.project
+.classpath
+.settings/
+.factorypath
+
+# ---------- 系统 / 临时文件 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.class
+
+# ---------- 本地配置（含密码，绝不提交） ----------
+*.local.properties
+.env
+.env.*
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.yaml
+frontend/src/utils/request.local.ts
+
+# ---------- 数据库导出 ----------
+*.sql.bak
+*.sql.gz
+
+# ---------- 压缩包 / 大文件 / 本地测试数据（不提交） ----------
+*.rar
+*.zip
+*.7z
+*.tar.gz
+emp.json
+leave-test.json
+sal.json
+
+# ---------- CloudStudio 运行时生成 ----------
+*.pid
+*.swp
+*~
+tools/make-better-reports-skill/.git
